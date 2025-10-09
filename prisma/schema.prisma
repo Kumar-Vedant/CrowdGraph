@@ -1,0 +1,193 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String                   @id @default(uuid())
+  username       String                   @unique
+  passwordHash   String
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  // relations
+  communities         UserCommunity[]
+  ownedCommunities  Community[]   @relation("UserOwnedCommunities")
+  communityReputation UserCommunityReputation[]
+  reputationLogs      ReputationLog[]
+  posts               Post[]
+  comments            Comment[]
+  nodeProposals       NodeProposal[]
+  edgeProposals       EdgeProposal[]
+  votes               Vote[]
+}
+
+model Community {
+  id          String                   @id @default(uuid())
+  title       String
+  description String?
+  ownerId     String
+  createdAt   DateTime                 @default(now())
+
+  // relations
+  owner             User                     @relation("UserOwnedCommunities", fields: [ownerId], references: [id])
+  members           UserCommunity[]
+  posts             Post[]
+  reputation        UserCommunityReputation[]
+  reputationLogs    ReputationLog[]
+}
+
+model UserCommunity {
+
+  userId      String
+  communityId String
+  role        Role
+  joinedAt    DateTime   @default(now())
+
+  // relations
+  user        User       @relation(fields: [userId], references: [id])
+  community   Community  @relation(fields: [communityId], references: [id])
+
+  // composite PK
+  @@id([userId, communityId])
+}
+
+model UserCommunityReputation {
+  userId      String
+  communityId String
+  reputation  Int        @default(0)
+
+  // relations
+  user        User       @relation(fields: [userId], references: [id])
+  community   Community  @relation(fields: [communityId], references: [id])
+
+  // composite PK
+  @@id([userId, communityId])
+}
+
+model ReputationLog {
+  id           String        @id @default(uuid())
+
+  userId      String
+  communityId String
+
+  actionType  Action
+
+  timestamp   DateTime                 @default(now())
+
+  // relations
+  user        User       @relation(fields: [userId], references: [id])
+  community   Community  @relation(fields: [communityId], references: [id])
+}
+
+model Post {
+  id          String     @id @default(uuid())
+  title       String
+  content     String
+  authorId    String
+  communityId String
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  // relations
+  author      User       @relation(fields: [authorId], references: [id])
+  community   Community  @relation(fields: [communityId], references: [id])
+  comments    Comment[]
+}
+
+model Comment {
+  id             String     @id @default(uuid())
+  postId         String
+  userId         String
+  content        String
+  createdAt      DateTime   @default(now())
+  parentCommentId String?
+
+  // relations
+  post           Post       @relation(fields: [postId], references: [id])
+  user           User       @relation(fields: [userId], references: [id])
+  parentComment  Comment?   @relation("CommentHierarchy", fields: [parentCommentId], references: [id])
+  replies        Comment[]  @relation("CommentHierarchy")
+}
+
+model NodeProposal {
+  id          String           @id @default(uuid())
+  userId      String
+  title       String
+  description String
+  metadata    Json?
+  status      ProposalStatus   @default(PENDING)
+  createdAt   DateTime         @default(now())
+  kgNodeId    String?
+
+  // relations
+  user        User             @relation(fields: [userId], references: [id])
+}
+
+model EdgeProposal {
+  id            String           @id @default(uuid())
+  userId        String
+  sourceNodeId  String?
+  kgSourceId    String?
+  targetNodeId  String?
+  kgTargetId    String?
+  relationType  String
+  description   String
+  status        ProposalStatus   @default(PENDING)
+  createdAt     DateTime         @default(now())
+  kgEdgeId      String?
+
+  // relations
+  user          User           @relation(fields: [userId], references: [id])
+}
+
+model Vote {
+  id           String        @id @default(uuid())
+  userId       String
+  proposalId   String
+  proposalType ProposalType
+  voteValue    VoteValue
+  timestamp    DateTime      @default(now())
+
+  user         User          @relation(fields: [userId], references: [id])
+
+}
+
+enum Role {
+  ADMIN
+  OWNER
+  MEMBER
+}
+
+enum Action {
+  PROPOSAL_APPROVED
+  POST_LIKED
+  VOTE_CAST
+}
+
+enum ProposalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum ProposalType {
+  NODE
+  EDGE
+}
+
+enum VoteValue {
+  UPVOTE
+  DOWNVOTE
+}
