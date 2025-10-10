@@ -1,18 +1,24 @@
-require("dotenv").config();
+import "dotenv/config";
 
-const path = require("node:path");
-const express = require("express");
+import path from "node:path";
+import express from "express";
+
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+
 const app = express();
 
-const userRouter = require("./routes/userRouter");
-const authRouter = require("./routes/authRouter");
-const nodeRouter = require("./routes/nodeRouter");
-const edgeRouter = require("./routes/edgeRouter");
-const indexRouter = require("./routes/indexRouter");
-const queryRouter = require("./routes/queryRouter");
-const communityRouter = require("./routes/communityRouter");
-const postRouter = require("./routes/postRouter");
-const queryRouter = require("./routes/queryRouter");
+import userRouter from "./routes/userRouter.js";
+import authRouter from "./routes/authRouter.js";
+import nodeRouter from "./routes/nodeRouter.js";
+import edgeRouter from "./routes/edgeRouter.js";
+import indexRouter from "./routes/indexRouter.js";
+import communityRouter from "./routes/communityRouter.js";
+import postRouter from "./routes/postRouter.js";
+import queryRouter from "./routes/queryRouter.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");

@@ -1,21 +1,35 @@
-exports.communityListGet = async (req, res) => {};
+const communityListGet = async (req, res) => {};
 
-exports.communitySearch = async (req, res) => {};
+const communitySearch = async (req, res) => {};
 
-exports.communityGet = async (req, res) => {};
+const communityGet = async (req, res) => {};
 
-exports.communityUsersGet = async (req, res) => {};
+const communityUsersGet = async (req, res) => {};
 
-exports.communityGraphGet = async (req, res) => {};
+const communityGraphGet = async (req, res) => {};
 
-exports.communityForumGet = async (req, res) => {};
+const communityForumGet = async (req, res) => {};
 
-exports.communityCreateGet = async (req, res) => {};
+const communityCreateGet = async (req, res) => {};
 
-exports.communityCreatePost = async (req, res) => {};
+const communityCreatePost = async (req, res) => {};
 
-exports.communityUpdateGet = async (req, res) => {};
+const communityUpdateGet = async (req, res) => {};
 
-exports.communityUpdatePost = async (req, res) => {};
+const communityUpdatePost = async (req, res) => {};
 
-exports.communityDeletePost = async (req, res) => {};
+const communityDeletePost = async (req, res) => {};
+
+export default {
+  communityListGet,
+  communitySearch,
+  communityGet,
+  communityUsersGet,
+  communityGraphGet,
+  communityForumGet,
+  communityCreateGet,
+  communityCreatePost,
+  communityUpdateGet,
+  communityUpdatePost,
+  communityDeletePost,
+};

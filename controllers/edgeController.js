@@ -1,11 +1,20 @@
-exports.edgeGet = async (req, res) => {};
+const edgeGet = async (req, res) => {};
 
-exports.edgeCreateGet = async (req, res) => {};
+const edgeCreateGet = async (req, res) => {};
 
-exports.edgeCreatePost = async (req, res) => {};
+const edgeCreatePost = async (req, res) => {};
 
-exports.edgeUpdateGet = async (req, res) => {};
+const edgeUpdateGet = async (req, res) => {};
 
-exports.edgeUpdatePost = async (req, res) => {};
+const edgeUpdatePost = async (req, res) => {};
 
-exports.edgeDeletePost = async (req, res) => {};
+const edgeDeletePost = async (req, res) => {};
+
+export default {
+  edgeGet,
+  edgeCreateGet,
+  edgeCreatePost,
+  edgeUpdateGet,
+  edgeUpdatePost,
+  edgeDeletePost,
+};

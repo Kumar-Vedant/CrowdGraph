@@ -1,13 +1,23 @@
-exports.userListGet = async (req, res) => {};
+const userListGet = async (req, res) => {};
 
-exports.userSearch = async (req, res) => {};
+const userSearch = async (req, res) => {};
 
-exports.userCreateGet = async (req, res) => {};
+const userCreateGet = async (req, res) => {};
 
-exports.userCreatePost = async (req, res) => {};
+const userCreatePost = async (req, res) => {};
 
-exports.userUpdateGet = async (req, res) => {};
+const userUpdateGet = async (req, res) => {};
 
-exports.userUpdatePost = async (req, res) => {};
+const userUpdatePost = async (req, res) => {};
 
-exports.userDeletePost = async (req, res) => {};
+const userDeletePost = async (req, res) => {};
+
+export default {
+  userListGet,
+  userSearch,
+  userCreateGet,
+  userCreatePost,
+  userUpdateGet,
+  userUpdatePost,
+  userDeletePost,
+};

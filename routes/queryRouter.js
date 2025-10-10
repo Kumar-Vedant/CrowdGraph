@@ -1,7 +1,7 @@
 import Router from "express";
 
 // import edgeController from "../controllers/edgeController.js";
-const indexRouter = Router();
+const queryRouter = Router();
 
 // edgeRouter.get("/:id", edgeController.edgeGet);
 // edgeRouter.get("/create", edgeController.edgeCreateGet);
@@ -10,4 +10,4 @@ const indexRouter = Router();
 // edgeRouter.post("/:id/update", edgeController.edgeUpdatePost);
 // edgeRouter.post("/:id/delete", edgeController.edgeDeletePost);
 
-export default indexRouter;
+export default queryRouter;

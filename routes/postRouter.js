@@ -1,5 +1,6 @@
-const { Router } = require("express");
-const postController = require("../controllers/postController");
+import Router from "express";
+
+import postController from "../controllers/postController.js";
 const postRouter = Router();
 
 postRouter.get("/:communityId", postController.postListGet);
@@ -11,4 +12,4 @@ postRouter.get("/:id/update", postController.postUpdateGet);
 postRouter.post("/:id/update", postController.postUpdatePost);
 postRouter.post("/:id/delete", postController.postDeletePost);
 
-module.exports = postRouter;
+export default postRouter;

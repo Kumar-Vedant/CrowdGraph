@@ -1,5 +1,6 @@
-const { Router } = require("express");
-const edgeRouter = require("../controllers/edgeController");
+import Router from "express";
+
+import edgeController from "../controllers/edgeController.js";
 const edgeRouter = Router();
 
 edgeRouter.get("/:id", edgeController.edgeGet);
@@ -9,4 +10,4 @@ edgeRouter.get("/:id/update", edgeController.edgeUpdateGet);
 edgeRouter.post("/:id/update", edgeController.edgeUpdatePost);
 edgeRouter.post("/:id/delete", edgeController.edgeDeletePost);
 
-module.exports = edgeRouter;
+export default edgeRouter;

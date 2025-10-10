@@ -1,15 +1,26 @@
-exports.postListGet = async (req, res) => {};
+const postListGet = async (req, res) => {};
 
-exports.postGet = async (req, res) => {};
+const postGet = async (req, res) => {};
 
-exports.postSearch = async (req, res) => {};
+const postSearch = async (req, res) => {};
 
-exports.postCreateGet = async (req, res) => {};
+const postCreateGet = async (req, res) => {};
 
-exports.postCreatePost = async (req, res) => {};
+const postCreatePost = async (req, res) => {};
 
-exports.postUpdateGet = async (req, res) => {};
+const postUpdateGet = async (req, res) => {};
 
-exports.postUpdatePost = async (req, res) => {};
+const postUpdatePost = async (req, res) => {};
 
-exports.postDeletePost = async (req, res) => {};
+const postDeletePost = async (req, res) => {};
+
+export default {
+  postListGet,
+  postGet,
+  postSearch,
+  postCreateGet,
+  postCreatePost,
+  postUpdateGet,
+  postUpdatePost,
+  postDeletePost,
+};

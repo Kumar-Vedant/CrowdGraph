@@ -1,5 +1,6 @@
-const { Router } = require("express");
-const communityController = require("../controllers/communityController");
+import Router from "express";
+
+import communityController from "../controllers/communityController.js";
 const communityRouter = Router();
 
 communityRouter.get("/", communityController.communityListGet);
@@ -14,4 +15,4 @@ communityRouter.get("/:id/update", communityController.communityUpdateGet);
 communityRouter.post("/:id/update", communityController.communityUpdatePost);
 communityRouter.post("/:id/delete", communityController.communityDeletePost);
 
-module.exports = communityRouter;
+export default communityRouter;

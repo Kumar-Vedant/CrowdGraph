@@ -1,15 +1,44 @@
-exports.nodeGet = async (req, res) => {};
+import driver from "../db/neo4j.js";
 
-exports.nodeSearch = async (req, res) => {};
+const nodeGetAll = async (req, res) => {
+  const session = driver.session();
 
-exports.nodeCreateGet = async (req, res) => {};
+  try {
+    const result = await session.run("MATCH (p:PLAYER) RETURN p");
+    const users = result.records.map((record) => record.get("p").properties["name"]);
+    res.json(users);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send("Error fetching users");
+  } finally {
+    await session.close();
+  }
+};
 
-exports.nodeCreatePost = async (req, res) => {};
+const nodeGet = async (req, res) => {};
 
-exports.nodeUpdateGet = async (req, res) => {};
+const nodeSearch = async (req, res) => {};
 
-exports.nodeUpdatePost = async (req, res) => {};
+const nodeCreateGet = async (req, res) => {};
 
-exports.nodeDeletePost = async (req, res) => {};
+const nodeCreatePost = async (req, res) => {};
 
-exports.nodeRelationsGet = async (req, res) => {};
+const nodeUpdateGet = async (req, res) => {};
+
+const nodeUpdatePost = async (req, res) => {};
+
+const nodeDeletePost = async (req, res) => {};
+
+const nodeRelationsGet = async (req, res) => {};
+
+export default {
+  nodeGetAll,
+  nodeGet,
+  nodeSearch,
+  nodeCreateGet,
+  nodeCreatePost,
+  nodeUpdateGet,
+  nodeUpdatePost,
+  nodeDeletePost,
+  nodeRelationsGet,
+};
