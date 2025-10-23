@@ -1,23 +1,5 @@
 {
-  "name": "crowdgraph",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "module",
   "dependencies": {
-    "@prisma/client": "^6.17.0",
-    "dotenv": "^17.2.2",
-    "express": "^5.1.0"
-  },
-  "devDependencies": {
-    "neo4j-driver": "^6.0.0",
-    "nodemon": "^3.1.10",
-    "prisma": "^6.16.2"
+    "@huggingface/inference": "^4.12.0"
   }
 }
