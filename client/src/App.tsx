@@ -1,8 +1,27 @@
-import React from 'react'
+import RootLayout from './_root/RootLayout'
+import { Route, Routes } from 'react-router-dom'
+import Landing from './_root/pages/Landing'
+import Explore from './_root/pages/Explore'
+import Profile from './_root/pages/Profile'
+import AuthLayout from './_auth/AuthLayout'
+import Signup from './_auth/pages/Signup'
+import Login from './_auth/pages/Login'
 
 function App() {
   return (
-    <div>App</div>
+    <main className="flex h-screen">
+      <Routes>
+        <Route element={<RootLayout />}>
+          <Route index element={<Landing />} />
+          <Route path="/explore" element={<Explore />} />
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+        </Route>
+      </Routes>
+    </main>
   )
 }
 
