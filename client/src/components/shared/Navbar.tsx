@@ -1,6 +1,10 @@
+import { AuthContext } from '@/context/AuthContext';
+import { useContext } from 'react';
 import { Link } from 'react-router'
 
 function Navbar() {
+  const { user } = useContext(AuthContext);
+
   return (
     <section className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#eae7f3] px-10 py-3">
           <Link to="/" className="">
@@ -26,7 +30,7 @@ function Navbar() {
             <div className="flex items-center gap-9">
               <Link className="text-[#110d1b] text-sm font-medium leading-normal" to="/explore">Explore</Link>
               <Link className="text-[#110d1b] text-sm font-medium leading-normal" to="https://github.com/Kumar-Vedant/CrowdGraph" target="_blank">Contribute</Link>
-              <Link className="text-[#110d1b] text-sm font-medium leading-normal" to="/profile">Profile</Link>
+              <Link className="text-[#110d1b] text-sm font-medium leading-normal" to={`/profile/${user.id}`}>Profile</Link>
             </div>
             <div className="flex gap-2">
               <Link to="/signup">

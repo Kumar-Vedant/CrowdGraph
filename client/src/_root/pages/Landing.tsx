@@ -1,4 +1,6 @@
 import { Link } from 'react-router'
+import CommunityGrid from '../../components/shared/CommunityGrid'
+import { communities } from '../../services/data'
 
 function landing() {
   return (
@@ -41,58 +43,9 @@ function landing() {
               </div>
             </div>
             <h2 className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Explore Communities</h2>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4">
-              <div className="flex flex-col gap-3 pb-3">
-                <div
-                  className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
-                  style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCiq0zt7XHl6kuYW5DmTMQHv0NZvTGWxcshrgCujnKYtQBOmXLy9Wp1LVX2NXNiGoEY54GxtAqf2KJYRdn4cf12MyFws6yjPdJTg2-qf4qkRcwPEZZ11NdTCcH0QL_ZF-QcmNqi52pggZ0RmKLeFdExIS8OIb4LFNP3Of_QscHCkui0RZItKl1SRKcJUxDBtRpwRKwH92-zGD4e9MxrAnZNCgxXV0Hs5KQHQDJ8r4vp0E-BWSmtLhxnDvU3kcdY3UFJVhfQmofx1HQ")' }}
-                ></div>
-                <div>
-                  <p className="text-[#110d1b] text-base font-medium leading-normal">Technology Enthusiasts</p>
-                  <p className="text-[#5f4c9a] text-sm font-normal leading-normal">Building a knowledge graph of emerging technologies.</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3 pb-3">
-                <div
-                  className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
-                  style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAcvKi3iasxXufM48Uf0m34EuQK3w5zH5DYDAA9iZ45mTTeSoufFud01GDuyg4sv4PMT4XRcy3ARqDYLP4AoC-k1cXEJSIwz543hVNfv30BX3C2eQ9mkTWHPlpAtxGQUe3rpGvcCgBOWXuXrjUB8YlcGmazRcjbeJStLAwWRCaXyMvAvItp9dMCMogTo81wPHeaSL46vCXF5Lzjr7mcovZlv5OVQPuNDh4Rm6n-ZvTXWXG-kvzOjo4ahyoEgwOH5P37kvUvYVJzaHM")' }}
-                ></div>
-                <div>
-                  <p className="text-[#110d1b] text-base font-medium leading-normal">Environmental Advocates</p>
-                  <p className="text-[#5f4c9a] text-sm font-normal leading-normal">Creating a graph of environmental issues and solutions.</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3 pb-3">
-                <div
-                  className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
-                  style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAv6yLmniZ82SJAdyLn-PVIePszfz52r2z5i9PoXgUXp3Zk4yjx3xSg-zl8DuhM0gf4v2gRq7wXDkAde3IRH5zBs6pFv-idr4x1J-SxqstVnzDRu17HdDb-sPodGbDxbRwbknzjt9gWYW2Y37stLG1WeLy4uLnbZKi167NRu3ewh5WZxRy7BzcCdmhjjSdKUKJIcp2S3pLH-R8EkeH7HpZ8-sSnPOy-JS7ukvLSuFFIkmBl5tWABxp-tUO41xmk-d4g84rDcLLUQ4k")' }}
-                ></div>
-                <div>
-                  <p className="text-[#110d1b] text-base font-medium leading-normal">Health &amp; Wellness Group</p>
-                  <p className="text-[#5f4c9a] text-sm font-normal leading-normal">Mapping health and wellness resources and practices.</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3 pb-3">
-                <div
-                  className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
-                  style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCxMxovvgDVfdxcwT4JZt8fShKygsjbTbN7VhKj3mWs_9ubDlayloygl8uUnsVwHzx_9bs7piN1cPzrdrKIt0w1fdvDuuooC2bz93j66y84n2JQNCvEHmCcp1uNefaCzFhx6TME3UbsFuaneDIWkyx-p5im5uSTiVfm3oJGVTNcP7wdaghOC6z6nEuN6Wm5PGuNZBk4B7Gy5vOVW9PKEzUAreS4Lv5RFODuwn2cq2oDIE4pQEpfJtBCqR-gG9NWa_EFI4k9p_MXdxw")' }}
-                ></div>
-                <div>
-                  <p className="text-[#110d1b] text-base font-medium leading-normal">Creative Arts Collective</p>
-                  <p className="text-[#5f4c9a] text-sm font-normal leading-normal">Collaboratively constructing a graph of artistic movements and works.</p>
-                </div>
-              </div>
-              <div className="flex flex-col gap-3 pb-3">
-                <div
-                  className="w-full bg-center bg-no-repeat aspect-square bg-cover rounded-lg"
-                  style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuDjtGEm-hAHP9IBMNPly4TollTlcCRrsmjYmFx9T-YfTRgv1R8ELYhUBjmcJwwWcWYin_t37FzDtqHVQlwatQgTfS0uNTsBddpLyaydHZKmctohfAZn20XVQeUXkYYYuAScmsMvAeJoc9sCmux9UvVK1t1v4Z57tfzHGd35mNMsxQBH8OoDIRsxdijrqxHY0aeYWDdXmCfXntnP8zfjRN9wPWWB4gqfD3v2sP0-zFR98AAhz78X2CGrhP7NnNsJObDw3rErpgkekAI")' }}
-                ></div>
-                <div>
-                  <p className="text-[#110d1b] text-base font-medium leading-normal">Educational Innovators</p>
-                  <p className="text-[#5f4c9a] text-sm font-normal leading-normal">Developing a knowledge graph of educational methods and resources.</p>
-                </div>
-              </div>
-            </div>
+            
+            <CommunityGrid communities={communities.slice(0, 5)} />
+            
             <h2 className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Hybrid AI + Human Validation Model</h2>
             <p className="text-[#110d1b] text-base font-normal leading-normal pb-3 pt-1 px-4">
               Our platform combines the power of AI with human expertise to ensure the accuracy and reliability of knowledge graphs. AI algorithms suggest potential relationships,

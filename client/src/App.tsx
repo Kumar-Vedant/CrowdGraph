@@ -6,6 +6,8 @@ import Profile from './_root/pages/Profile'
 import AuthLayout from './_auth/AuthLayout'
 import Signup from './_auth/pages/Signup'
 import Login from './_auth/pages/Login'
+import NotFound from './_root/pages/NotFound'
+import CommunityDashboard from './_root/pages/CommunityDashboard'
 
 function App() {
   return (
@@ -14,7 +16,9 @@ function App() {
         <Route element={<RootLayout />}>
           <Route index element={<Landing />} />
           <Route path="/explore" element={<Explore />} />
-          <Route path="/profile" element={<Profile />} />
+          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/community/:communityId" element={<CommunityDashboard />} />
+          <Route path="*" element={<NotFound />} />
         </Route>
         <Route element={<AuthLayout />}>
           <Route path="/login" element={<Login />} />
