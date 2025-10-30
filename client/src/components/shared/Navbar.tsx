@@ -1,9 +1,8 @@
-import { AuthContext } from '@/context/AuthContext';
-import { useContext } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import { Link } from 'react-router'
 
 function Navbar() {
-  const { user } = useContext(AuthContext);
+  const { user, logout } = useAuth();
 
   return (
     <section className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#eae7f3] px-10 py-3">
@@ -30,23 +29,45 @@ function Navbar() {
             <div className="flex items-center gap-9">
               <Link className="text-[#110d1b] text-sm font-medium leading-normal" to="/explore">Explore</Link>
               <Link className="text-[#110d1b] text-sm font-medium leading-normal" to="https://github.com/Kumar-Vedant/CrowdGraph" target="_blank">Contribute</Link>
-              <Link className="text-[#110d1b] text-sm font-medium leading-normal" to={`/profile/${user.id}`}>Profile</Link>
+              {/* <Link className="text-[#110d1b] text-sm font-medium leading-normal" to={`/profile/${user.id || ''}`}>Profile</Link> */}
             </div>
             <div className="flex gap-2">
-              <Link to="/signup">
-                <button
-                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#4913ec] text-[#f9f8fc] text-sm font-bold leading-normal tracking-[0.015em]"
-                >
-                  <span className="truncate">Sign Up</span>
-                </button>
-              </Link>
-              <Link to="/login">
-                <button
-                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#eae7f3] text-[#110d1b] text-sm font-bold leading-normal tracking-[0.015em]"
-                >
-                  <span className="truncate">Log In</span>
-                </button>
-              </Link>
+              {user ? (
+                <>
+                  <Link to={`/profile/${user.id}`}>
+                    <button
+                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#eae7f3] text-[#110d1b] text-sm font-bold leading-normal tracking-[0.015em]"
+                    >
+                      <span className="truncate">Profile</span>
+                    </button>
+                  </Link>
+    
+                  <button
+                    className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#d42629] text-[#f9f8fc] text-sm font-bold leading-normal tracking-[0.015em]"
+                    onClick={() => logout()}
+                  >
+                    <span className="truncate">Log Out</span>
+                  </button>
+                  
+                </>
+              ) : (
+                <>
+                  <Link to="/signup">
+                    <button
+                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#4913ec] text-[#f9f8fc] text-sm font-bold leading-normal tracking-[0.015em]"
+                    >
+                      <span className="truncate">Sign Up</span>
+                  </button>
+                  </Link>
+                  <Link to="/login">
+                    <button
+                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#eae7f3] text-[#110d1b] text-sm font-bold leading-normal tracking-[0.015em]"
+                    >
+                      <span className="truncate">Log In</span>
+                    </button>
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </section>

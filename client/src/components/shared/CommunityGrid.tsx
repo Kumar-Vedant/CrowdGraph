@@ -26,7 +26,7 @@ function CommunityCard({ id, title, description, createdAt, imageUrl }: Communit
 function CommunityGrid({ communities }: { communities: Community[] }) {
   return (
     <div>
-        <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-4">
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,175px))] gap-3 p-4">
             {communities.map((community) => (
                 <CommunityCard
                     key={community.id}

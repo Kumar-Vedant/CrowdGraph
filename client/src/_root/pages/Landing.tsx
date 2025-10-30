@@ -42,7 +42,7 @@ function landing() {
                 </div>
               </div>
             </div>
-            <h2 className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Explore Communities</h2>
+            <h2 className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Featured Communities</h2>
             
             <CommunityGrid communities={communities.slice(0, 5)} />
             
