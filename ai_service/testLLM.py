@@ -17,14 +17,6 @@ graph = Neo4jGraph(
     password=os.getenv("NEO4J_PASSWORD"),
 )
 
-# result = graph.query("""
-# MATCH (p:PLAYER)-[:PLAYS_FOR]->(t:TEAM)
-# RETURN p.name AS player, t.name AS team
-# """)
-
-# print(result)
-
-
 # initialize the model
 model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",

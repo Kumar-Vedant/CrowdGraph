@@ -103,7 +103,7 @@ const communityCreatePost = async (req, res) => {
   const { title, ownerId, description } = req.body;
 
   if (!title || !ownerId) {
-    return res.status(400).send("Missing required fields: 'title' and 'ownerId' are needed.");
+    return res.status(400).send("Missing required fields: 'title' and 'ownerId' are needed");
   }
 
   try {
@@ -147,7 +147,7 @@ const communityUpdatePost = async (req, res) => {
 
   // if no editable fields are provided to update
   if (!title && !description) {
-    return res.status(400).send("No valid fields provided for update. Only 'title' and 'description' are editable.");
+    return res.status(400).send("No valid fields provided for update. Only 'title' and 'description' are editable");
   }
 
   if (title) {

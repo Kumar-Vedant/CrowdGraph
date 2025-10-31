@@ -36,7 +36,7 @@ const userCreatePost = async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).send("Missing required fields: 'username' and 'password' are needed.");
+    return res.status(400).send("Missing required fields: 'username' and 'password' are needed");
   }
 
   try {
@@ -62,7 +62,7 @@ const userUpdatePost = async (req, res) => {
 
   // if no editable fields are provided to update
   if (!username && !password) {
-    return res.status(400).send("No valid fields provided for update. Only 'username' and 'password' are editable.");
+    return res.status(400).send("No valid fields provided for update. Only 'username' and 'password' are editable");
   }
 
   const updateData = {};
@@ -82,7 +82,7 @@ const userUpdatePost = async (req, res) => {
     res.status(200).send(user);
   } catch (error) {
     console.error(error);
-    res.status(500).send("Update failed");
+    res.status(500).send("Failed to update user");
   }
 };
 

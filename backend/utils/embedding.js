@@ -28,7 +28,13 @@ export async function recomputeNodeEmbedding(nodeId) {
       .join("; ");
 
     // prepare relationships for vector embedding by converting them to a string of the form (relation type label1, label2,... neighbour name; same for all nodes)
-    const relsText = relationships.map((r) => `${r.relType} ${r.neighborLabels.join(",")} (${r.neighborProps?.name || ""})`).join("; ");
+    const relsText = (relationships || [])
+      .map((r) => {
+        const labels = r.neighborLabels?.join(", ") || "";
+        const name = r.neighborProps?.name || "";
+        return `${r.relType || ""} ${labels} (${name})`;
+      })
+      .join("; ");
 
     const text = `
         Labels: ${node.labels.join(", ")};

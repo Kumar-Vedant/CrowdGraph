@@ -67,9 +67,9 @@ const nodeCreatePost = async (req, res) => {
   // sanitize labels (to prevent Cypher injection)
   const sanitizedLabels = labels.map((l) => l.replace(/[^A-Za-z0-9_]/g, "")).filter(Boolean);
   if (sanitizedLabels.length === 0) {
-    return res.status(400).send("Labels invalid after sanitization");
+    return res.status(400).send("At least one valid label required");
   }
-  const labelString = sanitizedLabels.map((l) => `:${l}`).join("");
+  const labelString = sanitizedLabels.map((l) => `:${l}`).join("") + ":Searchable";
 
   try {
     const query = `
@@ -79,7 +79,7 @@ const nodeCreatePost = async (req, res) => {
     const result = await session.executeWrite((tx) => tx.run(query, { props: properties }));
 
     if (result.records.length === 0) {
-      return res.status(500).send("Node creation failed");
+      return res.status(500).send("Failed to create node");
     }
 
     const record = result.records[0];
@@ -90,7 +90,7 @@ const nodeCreatePost = async (req, res) => {
     await recomputeNodeEmbedding(nodeId);
 
     return res.status(201).json({
-      elementId: node.elementId,
+      id: node.elementId,
       labels: node.labels,
       properties: node.properties,
     });
@@ -129,6 +129,7 @@ const nodeUpdatePost = async (req, res) => {
     if (Array.isArray(labels) && labels.length > 0) {
       newLabels = labels.map((l) => l.replace(/[^A-Za-z0-9_]/g, "")).filter(Boolean);
     }
+    newLabels.push("Searchable");
 
     // update query to modify properties, remove and add labels as required
     const query = `
