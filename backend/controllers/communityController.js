@@ -1,4 +1,6 @@
-import { Role, PrismaClient } from "@prisma/client";
+import pkg from "@prisma/client";
+const { PrismaClient, Role } = pkg;
+
 const prisma = new PrismaClient();
 
 const communityListGet = async (req, res) => {
