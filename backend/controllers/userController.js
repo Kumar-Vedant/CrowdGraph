@@ -30,9 +30,7 @@ const userSearch = async (req, res) => {
   }
 };
 
-const userCreateGet = async (req, res) => {};
-
-const userCreatePost = async (req, res) => {
+const userCreate = async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
@@ -54,9 +52,7 @@ const userCreatePost = async (req, res) => {
   }
 };
 
-const userUpdateGet = async (req, res) => {};
-
-const userUpdatePost = async (req, res) => {
+const userUpdate = async (req, res) => {
   const { id } = req.params;
   const { username, password } = req.body;
 
@@ -86,7 +82,7 @@ const userUpdatePost = async (req, res) => {
   }
 };
 
-const userDeletePost = async (req, res) => {
+const userDelete = async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.user.delete({
@@ -104,9 +100,7 @@ const userDeletePost = async (req, res) => {
 export default {
   userListGet,
   userSearch,
-  userCreateGet,
-  userCreatePost,
-  userUpdateGet,
-  userUpdatePost,
-  userDeletePost,
+  userCreate,
+  userUpdate,
+  userDelete,
 };

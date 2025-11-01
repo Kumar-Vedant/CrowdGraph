@@ -51,9 +51,7 @@ const edgeGet = async (req, res) => {
   }
 };
 
-const edgeCreateGet = async (req, res) => {};
-
-const edgeCreatePost = async (req, res) => {
+const edgeCreate = async (req, res) => {
   const session = driver.session();
   const { sourceId, targetId, type, properties } = req.body;
 
@@ -93,9 +91,7 @@ const edgeCreatePost = async (req, res) => {
   }
 };
 
-const edgeUpdateGet = async (req, res) => {};
-
-const edgeUpdatePost = async (req, res) => {
+const edgeUpdate = async (req, res) => {
   const session = driver.session();
   const { id } = req.params;
   const { properties } = req.body;
@@ -126,7 +122,7 @@ const edgeUpdatePost = async (req, res) => {
   }
 };
 
-const edgeDeletePost = async (req, res) => {
+const edgeDelete = async (req, res) => {
   const session = driver.session();
   const { id } = req.params;
 
@@ -159,9 +155,7 @@ const edgeDeletePost = async (req, res) => {
 
 export default {
   edgeGet,
-  edgeCreateGet,
-  edgeCreatePost,
-  edgeUpdateGet,
-  edgeUpdatePost,
-  edgeDeletePost,
+  edgeCreate,
+  edgeUpdate,
+  edgeDelete,
 };

@@ -5,10 +5,8 @@ const userRouter = Router();
 
 userRouter.get("/", userController.userListGet);
 userRouter.get("/search", userController.userSearch);
-userRouter.get("/create", userController.userCreateGet);
-userRouter.post("/create", userController.userCreatePost);
-userRouter.get("/:id/update", userController.userUpdateGet);
-userRouter.post("/:id/update", userController.userUpdatePost);
-userRouter.post("/:id/delete", userController.userDeletePost);
+userRouter.post("/create", userController.userCreate);
+userRouter.put("/:id/update", userController.userUpdate);
+userRouter.delete("/:id/delete", userController.userDelete);
 
 export default userRouter;

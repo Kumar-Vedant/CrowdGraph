@@ -54,9 +54,7 @@ const nodeGet = async (req, res) => {
 
 const nodeSearch = async (req, res) => {};
 
-const nodeCreateGet = async (req, res) => {};
-
-const nodeCreatePost = async (req, res) => {
+const nodeCreate = async (req, res) => {
   const session = driver.session();
   const { labels, properties } = req.body;
 
@@ -102,9 +100,7 @@ const nodeCreatePost = async (req, res) => {
   }
 };
 
-const nodeUpdateGet = async (req, res) => {};
-
-const nodeUpdatePost = async (req, res) => {
+const nodeUpdate = async (req, res) => {
   const session = driver.session();
   const { id } = req.params;
   const { labels, properties } = req.body;
@@ -163,7 +159,7 @@ const nodeUpdatePost = async (req, res) => {
   }
 };
 
-const nodeDeletePost = async (req, res) => {
+const nodeDelete = async (req, res) => {
   const { id } = req.params;
   const session = driver.session();
 
@@ -202,10 +198,8 @@ export default {
   nodeGetAll,
   nodeGet,
   nodeSearch,
-  nodeCreateGet,
-  nodeCreatePost,
-  nodeUpdateGet,
-  nodeUpdatePost,
-  nodeDeletePost,
+  nodeCreate,
+  nodeUpdate,
+  nodeDelete,
   nodeRelationsGet,
 };

@@ -51,9 +51,7 @@ const postSearch = async (req, res) => {
   }
 };
 
-const postCreateGet = async (req, res) => {};
-
-const postCreatePost = async (req, res) => {
+const postCreate = async (req, res) => {
   const { title, content, authorId, communityId } = req.body;
 
   if (!title || !content || !authorId || !communityId) {
@@ -76,15 +74,13 @@ const postCreatePost = async (req, res) => {
   }
 };
 
-const postUpdateGet = async (req, res) => {};
-
-const postUpdatePost = async (req, res) => {
+const postUpdate = async (req, res) => {
   const { id } = req.params;
   const { title, content } = req.body;
 
   // if no editable fields are provided to update
   if (!title && !content) {
-    return res.status(400).send("No valid fields provided for update. Only 'title' and 'content' are editable.");
+    return res.status(400).send("No valid fields provided for update. Only 'title' and 'content' are editable");
   }
 
   const updateData = {};
@@ -110,7 +106,7 @@ const postUpdatePost = async (req, res) => {
   }
 };
 
-const postDeletePost = async (req, res) => {
+const postDelete = async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.post.delete({
@@ -129,9 +125,7 @@ export default {
   postListGet,
   postGet,
   postSearch,
-  postCreateGet,
-  postCreatePost,
-  postUpdateGet,
-  postUpdatePost,
-  postDeletePost,
+  postCreate,
+  postUpdate,
+  postDelete,
 };

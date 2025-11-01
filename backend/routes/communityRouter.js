@@ -10,10 +10,8 @@ communityRouter.get("/:id/users", communityController.communityUsersGet);
 communityRouter.post("/:id/:userId", communityController.communityJoinUser);
 communityRouter.get("/:id/graph", communityController.communityGraphGet);
 communityRouter.get("/:id/forum", communityController.communityForumGet);
-communityRouter.get("/create", communityController.communityCreateGet);
-communityRouter.post("/create", communityController.communityCreatePost);
-communityRouter.get("/:id/update", communityController.communityUpdateGet);
-communityRouter.post("/:id/update", communityController.communityUpdatePost);
-communityRouter.post("/:id/delete", communityController.communityDeletePost);
+communityRouter.post("/create", communityController.communityCreate);
+communityRouter.put("/:id/update", communityController.communityUpdate);
+communityRouter.delete("/:id/delete", communityController.communityDelete);
 
 export default communityRouter;

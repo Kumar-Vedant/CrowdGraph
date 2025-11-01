@@ -4,10 +4,8 @@ import edgeController from "../controllers/edgeController.js";
 const edgeRouter = Router();
 
 edgeRouter.get("/:id", edgeController.edgeGet);
-edgeRouter.get("/create", edgeController.edgeCreateGet);
-edgeRouter.post("/create", edgeController.edgeCreatePost);
-edgeRouter.get("/:id/update", edgeController.edgeUpdateGet);
-edgeRouter.post("/:id/update", edgeController.edgeUpdatePost);
-edgeRouter.post("/:id/delete", edgeController.edgeDeletePost);
+edgeRouter.post("/create", edgeController.edgeCreate);
+edgeRouter.put("/:id/update", edgeController.edgeUpdate);
+edgeRouter.delete("/:id/delete", edgeController.edgeDelete);
 
 export default edgeRouter;

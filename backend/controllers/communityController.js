@@ -97,9 +97,7 @@ const communityGraphGet = async (req, res) => {};
 
 const communityForumGet = async (req, res) => {};
 
-const communityCreateGet = async (req, res) => {};
-
-const communityCreatePost = async (req, res) => {
+const communityCreate = async (req, res) => {
   const { title, ownerId, description } = req.body;
 
   if (!title || !ownerId) {
@@ -132,14 +130,12 @@ const communityCreatePost = async (req, res) => {
 
     res.status(200).send(newCommunity);
   } catch (error) {
-    console.error(err);
+    console.error(error);
     res.status(500).send("Failed to create community");
   }
 };
 
-const communityUpdateGet = async (req, res) => {};
-
-const communityUpdatePost = async (req, res) => {
+const communityUpdate = async (req, res) => {
   const { id } = req.params;
   const { title, description } = req.body;
 
@@ -171,7 +167,7 @@ const communityUpdatePost = async (req, res) => {
   }
 };
 
-const communityDeletePost = async (req, res) => {
+const communityDelete = async (req, res) => {
   const { id } = req.params;
   try {
     await prisma.community.delete({
@@ -194,9 +190,7 @@ export default {
   communityUsersGet,
   communityGraphGet,
   communityForumGet,
-  communityCreateGet,
-  communityCreatePost,
-  communityUpdateGet,
-  communityUpdatePost,
-  communityDeletePost,
+  communityCreate,
+  communityUpdate,
+  communityDelete,
 };
