@@ -72,7 +72,7 @@ const postCreate = async (req, res) => {
     res.status(200).send(post);
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to create user");
+    res.status(500).send("Failed to create post");
   }
 };
 
@@ -103,7 +103,7 @@ const postUpdate = async (req, res) => {
     });
     res.status(200).send(updatedPost);
   } catch (error) {
-    console.error(err);
+    console.error(error);
     res.status(500).send("Failed to update post");
   }
 };
@@ -119,7 +119,7 @@ const postDelete = async (req, res) => {
     res.redirect("/");
   } catch (error) {
     console.error(error);
-    res.status(500).send("Delete failed");
+    res.status(500).send("Failed to delete post");
   }
 };
 

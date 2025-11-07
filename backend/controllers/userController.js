@@ -32,6 +32,34 @@ const userSearch = async (req, res) => {
   }
 };
 
+const userCommunitiesGet = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const userCommunities = await prisma.userCommunity.findMany({
+      where: {
+        userId: id,
+      },
+      include: {
+        community: true,
+      },
+    });
+
+    const communities = userCommunities.map(({ community, role }) => ({
+      ...community,
+      role,
+    }));
+
+    res.status(200).json({
+      success: true,
+      count: communities.length,
+      communities,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Error fetching joined communities");
+  }
+};
+
 const userCreate = async (req, res) => {
   const { username, password } = req.body;
 
@@ -100,6 +128,7 @@ const userDelete = async (req, res) => {
 };
 
 export default {
+  userCommunitiesGet,
   userListGet,
   userSearch,
   userCreate,

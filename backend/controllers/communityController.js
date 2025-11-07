@@ -13,6 +13,22 @@ const communityListGet = async (req, res) => {
   }
 };
 
+const communityRandomGet = async (req, res) => {
+  try {
+    const communities = await prisma.$queryRaw`
+      SELECT * FROM "Community"
+      ORDER BY RANDOM()
+      LIMIT 10;
+    `;
+
+    // const communities = await prisma.community.findMany();
+    res.status(200).send(communities);
+  } catch (error) {
+    console.log(error);
+    res.status(500).send("Error fetching communities");
+  }
+};
+
 const communitySearch = async (req, res) => {
   const { title } = req.query;
   try {
@@ -186,6 +202,7 @@ const communityDelete = async (req, res) => {
 
 export default {
   communityListGet,
+  communityRandomGet,
   communitySearch,
   communityGet,
   communityJoinUser,

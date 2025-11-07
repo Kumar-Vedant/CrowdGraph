@@ -4,6 +4,7 @@ import communityController from "../controllers/communityController.js";
 const communityRouter = Router();
 
 communityRouter.get("/", communityController.communityListGet);
+communityRouter.get("/random", communityController.communityRandomGet);
 communityRouter.get("/search", communityController.communitySearch);
 communityRouter.get("/:id", communityController.communityGet);
 communityRouter.get("/:id/users", communityController.communityUsersGet);
