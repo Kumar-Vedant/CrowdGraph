@@ -1,53 +1,176 @@
 import axios from 'axios';
 
-
-///////////////////////////// User Authentication /////////////////////////////
-export const signUpUser = async (username: string, password: string) => {
-    const response = await axios.post('/user/create', {
-        username,
-        password,
-    });
-    return response.data;
-}
-
-export const signInUser = async (username: string, password: string) => {
-    const response = await axios.post('/user/login', {
-        username,
-        password,
-    });
-    return response.data;
-}
-
-
-
+const BASE_URL = "https://crowdgraph.onrender.com"
 
 ///////////////////////////// Community Management /////////////////////////////
 // get 10 featured communities
 export const getFeaturedCommunities = async () => {
-    const response = await axios.get('/communities/featured');
+    const response = await axios.get(`${BASE_URL}/community/random`);
     return response.data;
 }
 
 // search communities by title
 export const searchCommunities = async (title: string) => {
-    const response = await axios.get('/communities/search', {
-        params: { title },
-    });
+    const response = await axios.get(`${BASE_URL}/community/search?title=${title}`);
     return response.data;
 }
 
 // search community by id
 export const searchCommunityById = async (id: string) => {
-    // const response = await axios.get(`/communities/${id}`);
-    // return response.data;
-    throw console.error();
-    await new Promise(resolve => setTimeout(resolve, 3000));
-    return null;
+    const response = await axios.get(`${BASE_URL}/community/${id}`);
+    return response.data;
 }
-
 
 // get all users in community by community id
 export const getUsersInCommunity = async (communityId: string) => {
-    const response = await axios.get(`/communities/${communityId}/users`);
+    const response = await axios.get(`${BASE_URL}/community/${communityId}/users`);
+    console.log("Users in community response:", response.data);
     return response.data;
+}
+
+// join a community
+export const joinCommunity = async (communityId: string, userId: string) => {
+    const response = await axios.post(`${BASE_URL}/community/${communityId}/${userId}`);
+    return response.data;
+}
+
+// leave a community
+export const leaveCommunity = async (communityId: string, userId: string) => {
+    const response = await axios.delete(`${BASE_URL}/community/${communityId}/${userId}`);
+    return response.data;
+}
+
+///////////////////////////// Post Management /////////////////////////////
+// get all posts in community by community id
+export const getPostsInCommunity = async (communityId: string) => {
+    const response = await axios.get(`${BASE_URL}/post/${communityId}`);
+    return response.data;
+}
+
+// create a new post
+export const createPost = async (communityId: string, authorId: string, title: string, content: string) => {
+    const response = await axios.post(`${BASE_URL}/post/create`, {
+        communityId,
+        authorId,
+        title,
+        content,
+    });
+    return response.data;
+}
+
+// update a post
+export const updatePost = async (postId: string, title: string, content: string) => {
+    const response = await axios.put(`${BASE_URL}/post/${postId}/update`, {
+        title,
+        content,
+    });
+    return response.data;
+}
+
+// delete a post
+export const deletePost = async (postId: string) => {
+    const response = await axios.delete(`${BASE_URL}/post/${postId}/delete`);
+    return response.data;
+}
+
+// get post by title in community
+export const getPostByTitleInCommunity = async (communityId: string, title: string) => {
+    const response = await axios.get(`${BASE_URL}/post/${communityId}/search?title=${title}`);
+    return response.data;
+}
+
+///////////////////////////// Comment Management /////////////////////////////
+// get all comments in post by post id
+export const getCommentsInPost = async (postId: string) => {
+    const response = await axios.get(`${BASE_URL}/comment/${postId}/post`);
+    return response.data;
+}
+
+// get replies to a comment by comment id
+export const getRepliesToComment = async (commentId: string) => {
+    const response = await axios.get(`${BASE_URL}/comment/${commentId}/replies`);
+    return response.data;
+}
+
+// create a new comment
+export const createComment = async (postId: string, userId: string, content: string, parentCommentId?: string) => {
+    const response = await axios.post(`${BASE_URL}/comment/create`, {
+        postId,
+        userId,
+        content,
+        parentCommentId: parentCommentId || null,
+    });
+    return response.data;
+}
+
+// update a comment
+export const updateComment = async (commentId: string, content: string) => {
+    const response = await axios.put(`${BASE_URL}/comment/${commentId}/update`, {
+        content,
+    });
+    return response.data;
+}
+
+// delete a comment
+export const deleteComment = async (commentId: string) => {
+    const response = await axios.delete(`${BASE_URL}/comment/${commentId}/delete`);
+    return response.data;
+}
+
+///////////////////////////// User Management /////////////////////////////
+// get all users
+export const getAllUsers = async () => {
+    const response = await axios.get(`${BASE_URL}/user`);
+    return response.data;
+}
+
+// get user by id
+export const getUserById = async (id: string) => {
+    // const response = await axios.get(`${BASE_URL}/users/${id}`);
+    const allUsers = await getAllUsers();
+    const response = allUsers.find((user: any) => user.id === id);
+    return response;
+}
+
+// get user by username
+export const getUserByUsername = async (username: string) => {
+    const response = await axios.get(`${BASE_URL}/user/search?username=${username}`);
+    return response.data;
+}
+
+// sign up user
+export const signUpUser = async (username: string, password: string) => {
+    const response = await axios.post(`${BASE_URL}/user/create`, {
+        username,
+        password,
+    });
+    return response.data;
+}
+
+// sign in user
+export const signInUser = async (username: string, password: string) => {
+    console.log("Signing in user:", username);
+    const response = await getUserByUsername(username);
+    return response;
+}
+
+// update user
+export const updateUser = async (userId: string, username: string, password: string) => {
+    const response = await axios.put(`${BASE_URL}/user/${userId}/update`, {
+        username,
+        password,
+    });
+    return response.data;
+}
+
+// delete user
+export const deleteUser = async (userId: string) => {
+    const response = await axios.delete(`${BASE_URL}/user/${userId}/delete`);
+    return response.data;
+}
+
+// get communities of a user by user id
+export const getCommunitiesOfUser = async (userId: string) => {
+    const response = await axios.get(`${BASE_URL}/user/${userId}/communities`);
+    return response.data.communities;
 }

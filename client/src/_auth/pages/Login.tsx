@@ -1,8 +1,11 @@
+import { useAuth } from "@/context/AuthContext";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
+
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     emailOrUsername: "",
     password: "",
@@ -18,27 +21,7 @@ function Login() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
-    try {
-      const res = await fetch("/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        console.log("Login successful:", data);
-        navigate("/dashboard"); // 🔁 Redirect after login
-      } else {
-        const err = await res.json();
-        alert(`Login failed: ${err.message || "Invalid credentials"}`);
-      }
-    } catch (error) {
-      console.error(error);
-      alert("Error connecting to server");
-    }
+    // Navigate to dashboard on successful login
   };
 
   return (

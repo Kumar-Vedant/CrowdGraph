@@ -1,4 +1,4 @@
-import type { Community, Post, User } from "../schema";
+import type { Community, Post, User, Node, Edge } from "../schema";
 
 // dummy communities data
 export const communities:Community[] = [
@@ -12,6 +12,7 @@ export const communities:Community[] = [
     members: [
       { id: 'u1', username: 'Lakshay LK', createdAt: new Date() },
       { id: 'u2', username: 'Aarav Patel', createdAt: new Date() },
+      {id: '1', username: 'John Doe', createdAt: new Date()}
     ],
     posts: [],
     reputation: 124,
@@ -299,6 +300,113 @@ export const posts: Post[] = [
         user: users[5],
         replies: [],
       },
+    ],
+  },
+];
+
+// ----------------------------
+// Dummy Nodes
+// ----------------------------
+export const dummyNodes: Node[] = [
+  {
+    id: "n1",
+    labels: ["Person"],
+    properties: [
+      { key: "name", value: "Alice" },
+      { key: "age", value: 28 },
+      { key: "city", value: "New York" },
+    ],
+  },
+  {
+    id: "n2",
+    labels: ["Person"],
+    properties: [
+      { key: "name", value: "Bob" },
+      { key: "age", value: 32 },
+      { key: "city", value: "London" },
+    ],
+  },
+  {
+    id: "n3",
+    labels: ["Company"],
+    properties: [
+      { key: "name", value: "Techify Inc." },
+      { key: "industry", value: "Software" },
+      { key: "founded", value: 2016 },
+    ],
+  },
+  {
+    id: "n4",
+    labels: ["Project", "entity"],
+    properties: [
+      { key: "name", value: "NeuralVision" },
+      { key: "status", value: "Active" },
+      { key: "budget", value: 500000 },
+    ],
+  },
+  {
+    id: "n5",
+    labels: ["Person"],
+    properties: [
+      { key: "name", value: "Charlie" },
+      { key: "age", value: 25 },
+      { key: "city", value: "San Francisco" },
+    ],
+  },
+];
+
+// ----------------------------
+// Dummy Edges
+// ----------------------------
+export const dummyEdges: Edge[] = [
+  {
+    id: "e1",
+    sourceId: "n1",
+    targetId: "n2",
+    type: "FRIENDS_WITH",
+    properties: [
+      { key: "since", value: 2018 },
+      { key: "metAt", value: "Conference" },
+    ],
+  },
+  {
+    id: "e2",
+    sourceId: "n1",
+    targetId: "n3",
+    type: "WORKS_AT",
+    properties: [
+      { key: "role", value: "Software Engineer" },
+      { key: "since", value: 2020 },
+    ],
+  },
+  {
+    id: "e3",
+    sourceId: "n2",
+    targetId: "n3",
+    type: "INVESTED_IN",
+    properties: [
+      { key: "amount", value: 100000 },
+      { key: "currency", value: "USD" },
+    ],
+  },
+  {
+    id: "e4",
+    sourceId: "n3",
+    targetId: "n4",
+    type: "OWNS",
+    properties: [
+      { key: "since", value: 2022 },
+      { key: "stake", value: "100%" },
+    ],
+  },
+  {
+    id: "e5",
+    sourceId: "n5",
+    targetId: "n4",
+    type: "CONTRIBUTES_TO",
+    properties: [
+      { key: "role", value: "Data Scientist" },
+      { key: "hoursPerWeek", value: 20 },
     ],
   },
 ];

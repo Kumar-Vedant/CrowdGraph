@@ -1,0 +1,5 @@
+Yeh routes chahiye:
+1. random 10 communities mil jaye
+2. post id se comments
+3. comment id se replies (uske just child not grandchild, taaki nested kar sakein)
+4. user id se uski joined communities mil jaye with uska specifc role

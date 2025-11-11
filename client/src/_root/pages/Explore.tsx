@@ -1,30 +1,31 @@
 import { useEffect, useState } from "react";
 import CommunityGrid from "../../components/shared/CommunityGrid";
 import SearchBar from "../../components/shared/SearchBar";
-import { communities } from "../../services/data";
 import type { Community } from "@/schema";
-import { searchCommunities } from "@/services/api";
+import { getFeaturedCommunities, searchCommunities } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
 
 function Explore() {
-  const [communitiesToShow, setCommunitiesToShow] = useState<Community[]>(communities);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const { data: featuredCommunities, loading: loadingFeatured, callApi: callFeaturedCommunities } = useApi(getFeaturedCommunities);
+  const { data: searchResults, loading: searchLoading, error: searchError, callApi: callSearchCommunities } = useApi(searchCommunities);
 
-  const {
-    data: searchResults,
-    loading,
-    error,
-    callApi: callSearchCommunities,
-  } = useApi<Community[]>(searchCommunities);
+  const [communitiesToShow, setCommunitiesToShow] = useState<Community[]>(featuredCommunities || []);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  
+
+  // Load featured communities on mount
+  useEffect(() => {
+    callFeaturedCommunities();
+  }, []);
 
   // Call API when searchQuery changes
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      setCommunitiesToShow(communities);
+      setCommunitiesToShow(featuredCommunities || []);
     } else {
       callSearchCommunities(searchQuery);
     }
-  }, [searchQuery, callSearchCommunities]);
+  }, [searchQuery, featuredCommunities]);
 
   // Update results when API data changes
   useEffect(() => {
@@ -52,17 +53,17 @@ function Explore() {
           onSearch={(query) => setSearchQuery(query)}
         />
 
-        {loading && (
+        {(searchLoading || loadingFeatured) && (
           <p className="text-center text-gray-500 py-6">Loading communities...</p>
         )}
 
-        {error && (
+        {searchError && (
           <p className="text-center text-red-500 py-6">
             Failed to load communities. Please try again.
           </p>
         )}
 
-        {!loading && !error && (
+        {!loadingFeatured && !searchError && (
           <CommunityGrid communities={communitiesToShow} />
         )}
       </div>

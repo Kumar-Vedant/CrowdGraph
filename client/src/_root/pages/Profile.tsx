@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
+import { useApi } from "@/hooks/apiHook";
+import { getCommunitiesOfUser } from "@/services/api";
+import type { Community } from "@/schema";
 
 function Profile() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"overview" | "contributions" | "settings">("overview");
 
@@ -13,6 +16,14 @@ function Profile() {
   }, [user, navigate]);
 
   if (!user) return null;
+
+  const { data: communities, callApi: fetchCommunities } = useApi(getCommunitiesOfUser);
+
+  useEffect(() => {
+    if (user) {
+      fetchCommunities(user.id);
+    }
+  }, [user, fetchCommunities]);
 
   const tabs = [
     { key: "overview", label: "Overview" },
@@ -30,13 +41,13 @@ function Profile() {
               <div
                 className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32"
                 style={{
-                  backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAtXSN3t85yBLBq5hrfrVAbpLrlLfqPZo2qF32zH8nycJvV6kBcZ9qMFUXr23p7cJwRTFSKJjaF14iu4b7C39RXZ5wK6NotGccRWZWkmg06n9cpUITJE60LalBGxPKDrf14fDYnTyLVYA9PBwXzbPmEOGvY3uXs91Ip6fRGw_yzk_N4OdpN-yq8UdWsgLmFFSWmsMr9iP91A6_YbAcVPh6Na6Sdc3VQFnUecK0AS_S3_8Mi9Voh0mDPdUY5A9wgs0nRefq5fV1SoaQ")'
+                  backgroundImage: 'url("https://i.pinimg.com/236x/b6/2f/dc/b62fdc1469056818b6f6aa017afc3134.jpg")'
                 }}
               ></div>
               <div className="flex flex-col justify-center">
                 <p className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em]">{user.username}</p>
                 {/* <p className="text-[#5f4c9a] text-base font-normal leading-normal">AI Enthusiast | Knowledge Graph Contributor</p> */}
-                <p className="text-[#5f4c9a] text-base font-normal leading-normal">Joined {user?.createdAt.toDateString()}</p>
+                <p className="text-[#5f4c9a] text-base font-normal leading-normal">Joined {user?.createdAt}</p>
               </div>
             </div>
           </div>
@@ -61,7 +72,7 @@ function Profile() {
 
         {/* Tab Content */}
         <div className="mt-2">
-          {activeTab === "overview" && <Overview />}
+          {activeTab === "overview" && <Overview communities={communities || []} />}
           {activeTab === "contributions" && <Contributions />}
           {activeTab === "settings" && <Settings user={user} />}
         </div>
@@ -70,19 +81,12 @@ function Profile() {
   );
 }
 
-const Overview = () => {
+const Overview = ({ communities }: { communities: Community[] }) => {
   const [filter, setFilter] = useState<"Owner" | "Admin" | "Member" | "All">("All");
 
-  const communities = [
-    { id: 1, name: "AI Innovators", role: "Owner", reputation: 1200 },
-    { id: 2, name: "Machine Learning Enthusiasts", role: "Admin", reputation: 870 },
-    { id: 3, name: "Data Science Forum", role: "Member", reputation: 340 },
-    { id: 4, name: "Deep Learning Hub", role: "Member", reputation: 450 },
-  ];
-
   const roles = ["All", "Owner", "Admin", "Member"] as const;
-  const filtered = filter === "All" ? communities : communities.filter(c => c.role === filter);
-
+  const filtered = filter === "All" ? communities : communities.filter(c => c.role === filter.toUpperCase());
+  
   return (
     <div>
       <h2 className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
@@ -119,8 +123,8 @@ const Overview = () => {
                 className="flex justify-between items-center p-4 bg-white rounded-lg shadow-sm border border-[#d5cfe7] hover:shadow-md transition"
               >
                 <div className="flex flex-col">
-                <span className="text-[#110d1b] font-semibold text-base">{community.name}</span>
-                <span className="text-[#5f4c9a] text-sm mt-1">Reputation: {community.reputation}</span>
+                <span className="text-[#110d1b] font-semibold text-base">{community.title}</span>
+                <span className="text-[#5f4c9a] text-sm mt-1">Reputation: {'na' || community.reputation}</span>
               </div>
               <span
                 className={`px-3 py-1 rounded-lg text-sm font-medium ${

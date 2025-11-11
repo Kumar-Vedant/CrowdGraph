@@ -16,7 +16,7 @@ function App() {
         <Route element={<RootLayout />}>
           <Route index element={<Landing />} />
           <Route path="/explore" element={<Explore />} />
-          <Route path="/profile/:username" element={<Profile />} />
+          <Route path="/profile" element={<Profile />} />
           <Route path="/community/:communityId" element={<CommunityDashboard />} />
           <Route path="*" element={<NotFound />} />
         </Route>

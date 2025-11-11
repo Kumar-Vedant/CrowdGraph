@@ -18,7 +18,7 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>({id: '1', username: 'John Doe', createdAt: new Date()});
+  const [user, setUser] = useState<User | null>({id: '667a383d-a8c8-40f7-a542-6610900ab5d0', username: 'lakshay', createdAt: new Date('2025-11-11T17:26:08.193Z').toLocaleDateString()});
 
   // Optional helper functions for better usability
   const login = (userData: User) => setUser(userData);

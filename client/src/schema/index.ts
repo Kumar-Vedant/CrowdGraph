@@ -1,30 +1,17 @@
 interface User  {
   id: string;
   username: string;
-  createdAt: Date;
+  createdAt: string;
 }
-
-// interface Community {
-//   id: string;
-//   title: string;
-//   description: string;
-//   createdAt: Date;
-// }
 
 interface Community {
   id: string;
   title: string;
-  description: string | null;
+  description: string;
   ownerId: string;
   createdAt: Date;
-
-  // relations
-  owner: User;
-  members: User[];
-  posts: Post[];
-  reputation: number;
+  role?: "Admin" | "Member" | "Owner";
 }
-
 
 interface Comment {
   id: string;
@@ -32,9 +19,7 @@ interface Comment {
   userId: string;
   content: string;
   createdAt: Date;
-  parentCommentId?: string | null;
-  user: User;
-  replies?: Comment[];
+  parentCommentId: string;
 }
 
 interface Post {
@@ -44,9 +29,24 @@ interface Post {
   authorId: string;
   communityId: string;
   createdAt: Date;
-  updatedAt: Date;
-  author: User;
-  comments: Comment[];
 }
 
-export type { User, Community, Post, Comment };
+interface Node {
+  id?: string;
+  labels: string[];
+  properties: [
+    { key: "name"; value: string },   // mandatory first element
+    ...{ key: string; value: any }[]  // allow additional key-value pairs
+  ];
+}
+
+interface Edge {
+  id?: string;
+  sourceId: string;
+  targetId: string;
+  type: string;
+  properties: { key: string; value: any }[];
+}
+
+
+export type { User, Community, Post, Comment, Node, Edge };

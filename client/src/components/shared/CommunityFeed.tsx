@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
 import type { Post, Comment } from "@/schema/index";
+import { getCommentsInPost, getPostsInCommunity, getRepliesToComment } from "@/services/api";
+import { useApi } from "@/hooks/apiHook";
 
 interface CommunityFeedProps {
   communityId: string;
@@ -12,30 +15,44 @@ interface CommunityFeedProps {
 
 export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId }) => {
   const { user } = useAuth();
+
+  const { data: postsData, loading: postsLoading, callApi: callPostsApi } =
+    useApi(getPostsInCommunity);
+  const { callApi: callCommentsApi } = useApi(getCommentsInPost);
+  const { callApi: callRepliesApi } = useApi(getRepliesToComment);
+
   const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [replies, setReplies] = useState<Record<string, Comment[]>>({});
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
+  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
   const [commentText, setCommentText] = useState<Record<string, string>>({});
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostContent, setNewPostContent] = useState("");
   const [posting, setPosting] = useState(false);
 
-  // Fetch posts
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const res = await fetch(`/api/communities/${communityId}/posts`);
-        const data = await res.json();
-        setPosts(data);
-      } catch (err) {
-        console.error("Failed to fetch posts:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchPosts();
+    callPostsApi(communityId).then((res) => {
+      if (res) setPosts(postsData);
+    });
   }, [communityId]);
 
-  // Add a new comment/reply
+  const toggleComments = async (postId: string) => {
+    if (!expandedComments[postId]) {
+      const res = await callCommentsApi(postId);
+      if (res) setComments((prev) => ({ ...prev, [postId]: res }));
+    }
+    setExpandedComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
+  const toggleReplies = async (commentId: string) => {
+    if (!expandedReplies[commentId]) {
+      const res = await callRepliesApi(commentId);
+      if (res) setReplies((prev) => ({ ...prev, [commentId]: res }));
+    }
+    setExpandedReplies((prev) => ({ ...prev, [commentId]: !prev[commentId] }));
+  };
+
   const handleAddComment = async (postId: string, parentId?: string) => {
     const text = commentText[postId + (parentId ?? "")];
     if (!text?.trim()) return;
@@ -53,13 +70,17 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId }) => 
       });
       if (res.ok) {
         const newComment = await res.json();
-        setPosts((prev) =>
-          prev.map((p) =>
-            p.id === postId
-              ? { ...p, comments: [...p.comments, newComment] }
-              : p
-          )
-        );
+        if (parentId) {
+          setReplies((prev) => ({
+            ...prev,
+            [parentId]: [...(prev[parentId] || []), newComment],
+          }));
+        } else {
+          setComments((prev) => ({
+            ...prev,
+            [postId]: [...(prev[postId] || []), newComment],
+          }));
+        }
         setCommentText((prev) => ({ ...prev, [postId + (parentId ?? "")]: "" }));
       }
     } catch (err) {
@@ -67,7 +88,6 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId }) => 
     }
   };
 
-  // Add a new post
   const handleCreatePost = async () => {
     if (!newPostTitle.trim() || !newPostContent.trim()) return;
     setPosting(true);
@@ -94,70 +114,68 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId }) => 
     }
   };
 
-  // Recursive render comments
-  const renderComments = (comments: Comment[], postId: string, depth = 0) => (
-    <div
-      className={`mt-3 space-y-4 ${
-        depth > 0 ? "border-l-2 border-gray-200 pl-4 ml-4" : ""
-      }`}
-    >
-      {comments.map((comment) => (
-        <div
-          key={comment.id}
-          className="rounded-md bg-gray-50 p-3 shadow-sm hover:bg-gray-100 transition"
-        >
-          <div>
-            <p className="text-sm font-semibold text-gray-800">
-              {comment.user.username}
-            </p>
-            <p className="text-sm text-gray-700 mt-1">{comment.content}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              {new Date(comment.createdAt).toLocaleString()}
-            </p>
-          </div>
-
-          
-          <div className="mt-2">
-            <Textarea
-              placeholder="Write a reply..."
-              value={commentText[postId + comment.id] || ""}
-              onChange={(e) =>
-                setCommentText((prev) => ({
-                  ...prev,
-                  [postId + comment.id]: e.target.value,
-                }))
-              }
-              className="min-h-[60px] bg-white"
-            />
+  const renderCommentTree = (comment: Comment, depth = 0) => {
+    const hasReplies = expandedReplies[comment.id];
+    return (
+      <div
+        key={comment.id}
+        className={`ml-${depth * 4} mt-3 border-l border-gray-200 pl-3`}
+      >
+        <div className="bg-gray-50 rounded-md p-3 hover:bg-gray-100 transition">
+          <p className="font-semibold text-sm text-gray-800">{comment.user.username}</p>
+          <p className="text-gray-700 text-sm">{comment.content}</p>
+          <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+            <span>{new Date(comment.createdAt).toLocaleString()}</span>
             <Button
+              variant="ghost"
               size="sm"
-              variant="secondary"
-              className="mt-1"
-              onClick={() => handleAddComment(postId, comment.id)}
+              onClick={() => toggleReplies(comment.id)}
+              className="text-xs flex items-center space-x-1"
             >
-              Reply
+              {hasReplies ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              <span>Replies</span>
             </Button>
           </div>
-
-          {comment.replies && comment.replies.length > 0 && (
-            <div>{renderComments(comment.replies, postId, depth + 1)}</div>
-          )}
         </div>
-      ))}
-    </div>
-  );
 
-  // Loading state
-  if (loading)
-    return (
-      <div className="text-center py-6 text-gray-500">
-        Loading community feed...
+        {hasReplies && (
+          <div className="ml-6">
+            {replies[comment.id]?.map((reply) => renderCommentTree(reply, depth + 1))}
+            <div className="mt-2">
+              <Textarea
+                placeholder="Write a reply..."
+                value={commentText[comment.postId + comment.id] || ""}
+                onChange={(e) =>
+                  setCommentText((prev) => ({
+                    ...prev,
+                    [comment.postId + comment.id]: e.target.value,
+                  }))
+                }
+                className="min-h-[50px]"
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                className="mt-1"
+                onClick={() => handleAddComment(comment.postId, comment.id)}
+              >
+                Reply
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
+    );
+  };
+
+  if (postsLoading)
+    return (
+      <div className="text-center py-6 text-gray-500">Loading community feed...</div>
     );
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
-      {/* Create post form */}
+      {/* Create Post */}
       <Card className="p-5 rounded-xl bg-white shadow-md border border-gray-200">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg font-semibold text-gray-900">
@@ -170,34 +188,24 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId }) => 
             placeholder="Title"
             value={newPostTitle}
             onChange={(e) => setNewPostTitle(e.target.value)}
-            className="w-full mb-3 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-indigo-200"
+            className="w-full mb-3 p-2 border border-gray-300 rounded-md"
           />
           <Textarea
             placeholder="Content"
             value={newPostContent}
             onChange={(e) => setNewPostContent(e.target.value)}
-            className="w-full mb-3 min-h-[100px] bg-white"
+            className="w-full min-h-[100px]"
           />
-          <Button
-            onClick={handleCreatePost}
-            disabled={posting}
-            className="mt-2"
-          >
+          <Button onClick={handleCreatePost} disabled={posting} className="mt-2">
             {posting ? "Posting..." : "Post"}
           </Button>
         </CardContent>
       </Card>
 
-      {/* No posts message */}
+      {/* Posts */}
       {posts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center text-gray-500">
-          <p className="text-lg font-medium">No posts yet</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Be the first to start a discussion in this community.
-          </p>
-        </div>
+        <div className="text-center text-gray-500 py-10">No posts yet</div>
       ) : (
-        // Render posts
         posts.map((post) => (
           <Card
             key={post.id}
@@ -214,38 +222,45 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId }) => 
             </CardHeader>
 
             <CardContent>
-              <p className="text-gray-800 mb-4 leading-relaxed">{post.content}</p>
+              <p className="text-gray-800 mb-4">{post.content}</p>
 
-              <Separator className="my-4" />
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center space-x-2 text-gray-600"
+                onClick={() => toggleComments(post.id)}
+              >
+                {expandedComments[post.id] ? <ChevronDown /> : <ChevronRight />}
+                <MessageSquare size={16} />
+                <span>Comments</span>
+              </Button>
 
-              <h4 className="text-sm font-semibold text-gray-700 mb-2">Comments</h4>
-              {post.comments.length > 0 ? (
-                renderComments(post.comments, post.id)
-              ) : (
-                <p className="text-sm text-gray-500">No comments yet.</p>
+              {expandedComments[post.id] && (
+                <div className="mt-4">
+                  {comments[post.id]?.length ? (
+                    comments[post.id].map((c) => renderCommentTree(c))
+                  ) : (
+                    <p className="text-sm text-gray-500">No comments yet.</p>
+                  )}
+
+                  <div className="mt-4">
+                    <Textarea
+                      placeholder="Add a comment..."
+                      value={commentText[post.id] || ""}
+                      onChange={(e) =>
+                        setCommentText((prev) => ({
+                          ...prev,
+                          [post.id]: e.target.value,
+                        }))
+                      }
+                      className="min-h-[70px]"
+                    />
+                    <Button className="mt-2" onClick={() => handleAddComment(post.id)}>
+                      Comment
+                    </Button>
+                  </div>
+                </div>
               )}
-
-             
-              <div className="mt-4">
-                <Textarea
-                  placeholder="Add a comment..."
-                  value={commentText[post.id] || ""}
-                  onChange={(e) =>
-                    setCommentText((prev) => ({
-                      ...prev,
-                      [post.id]: e.target.value,
-                    }))
-                  }
-                  className="min-h-[70px] bg-white"
-                />
-                <Button
-                  className="mt-2"
-                  onClick={() => handleAddComment(post.id)}
-                >
-                  Comment
-                </Button>
-              </div>
-              
             </CardContent>
           </Card>
         ))
