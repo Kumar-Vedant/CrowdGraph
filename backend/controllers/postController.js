@@ -7,7 +7,7 @@ const postListGet = async (req, res) => {
   const { communityId } = req.params;
 
   try {
-    const posts = await prisma.post.findMany({
+    const postRecords = await prisma.post.findMany({
       where: {
         communityId: communityId,
       },
@@ -18,12 +18,18 @@ const postListGet = async (req, res) => {
         authorId: true,
         communityId: true,
         createdAt: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
+    const posts = postRecords.map(({ author, ...post }) => ({ ...post, authorName: author.username }));
     res.status(200).json({
       success: true,
       count: posts.length,
-      posts,
+      data: posts,
     });
   } catch (error) {
     console.log(error);
@@ -38,7 +44,7 @@ const postGet = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const post = await prisma.post.findUnique({
+    const postRecord = await prisma.post.findUnique({
       where: {
         id: id,
       },
@@ -49,11 +55,19 @@ const postGet = async (req, res) => {
         authorId: true,
         communityId: true,
         createdAt: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
+    const { author, ...rest } = postRecord;
+    const post = { ...rest, authorName: author.username };
+
     res.status(200).json({
       success: true,
-      post,
+      data: post,
     });
   } catch (error) {
     console.log(error);
@@ -67,7 +81,7 @@ const postGet = async (req, res) => {
 const postSearch = async (req, res) => {
   const { title } = req.query;
   try {
-    const posts = await prisma.post.findMany({
+    const postRecords = await prisma.post.findMany({
       where: {
         title: {
           contains: title,
@@ -81,13 +95,19 @@ const postSearch = async (req, res) => {
         authorId: true,
         communityId: true,
         createdAt: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
 
+    const posts = postRecords.map(({ author, ...post }) => ({ ...post, authorName: author.username }));
     res.status(200).json({
       success: true,
       count: posts.length,
-      posts,
+      data: posts,
     });
   } catch (error) {
     console.log(error);
@@ -109,7 +129,7 @@ const postCreate = async (req, res) => {
   }
 
   try {
-    const post = await prisma.post.create({
+    const postRecord = await prisma.post.create({
       data: {
         title: title,
         content: content,
@@ -123,12 +143,19 @@ const postCreate = async (req, res) => {
         authorId: true,
         communityId: true,
         createdAt: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
 
+    const { author, ...rest } = postRecord;
+    const post = { ...rest, authorName: author.username };
     res.status(200).json({
       success: true,
-      post,
+      data: post,
     });
   } catch (error) {
     console.error(error);
@@ -173,12 +200,19 @@ const postUpdate = async (req, res) => {
         authorId: true,
         communityId: true,
         createdAt: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
 
+    const { author, ...rest } = postRecord;
+    const post = { ...rest, authorName: author.username };
     res.status(200).json({
       success: true,
-      post: updatedPost,
+      data: post,
     });
   } catch (error) {
     console.error(error);

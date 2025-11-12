@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import pkg from "@prisma/client";
+import { error } from "neo4j-driver";
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
@@ -28,7 +29,7 @@ const userGet = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      user,
+      data: user,
     });
   } catch (error) {
     console.log(error);
@@ -51,7 +52,7 @@ const userListGet = async (req, res) => {
     res.status(200).json({
       success: true,
       count: users.length,
-      users,
+      data: users,
     });
   } catch (error) {
     console.log(error);
@@ -81,7 +82,7 @@ const userSearch = async (req, res) => {
     res.status(200).json({
       success: true,
       count: users.length,
-      users,
+      data: users,
     });
   } catch (error) {
     console.log(error);
@@ -103,7 +104,7 @@ const userCommunitiesGet = async (req, res) => {
     if (!userExists) {
       return res.status(404).json({
         success: false,
-        message: "User not found.",
+        error: "User not found.",
       });
     }
 
@@ -124,7 +125,7 @@ const userCommunitiesGet = async (req, res) => {
     res.status(200).json({
       success: true,
       count: communities.length,
-      communities,
+      data: communities,
     });
   } catch (error) {
     console.log(error);
@@ -160,7 +161,7 @@ const userCreate = async (req, res) => {
     });
     res.status(200).json({
       success: true,
-      user,
+      data: user,
     });
   } catch (error) {
     console.error(error);
@@ -216,7 +217,7 @@ const userUpdate = async (req, res) => {
     });
     res.status(200).json({
       success: true,
-      user,
+      data: user,
     });
   } catch (error) {
     console.error(error);
@@ -240,7 +241,7 @@ const userDelete = async (req, res) => {
     if (!userExists) {
       return res.status(404).json({
         success: false,
-        message: "User not found.",
+        error: "User not found.",
       });
     }
 

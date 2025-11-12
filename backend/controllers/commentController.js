@@ -7,14 +7,24 @@ const commentGet = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const comment = await prisma.comment.findUnique({
+    const commentRecord = await prisma.comment.findUnique({
       where: {
         id: id,
       },
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
+      },
     });
+
+    const { user, ...rest } = commentRecord;
+    const comment = { ...rest, username: user.username };
     res.status(200).json({
       success: true,
-      comment,
+      data: comment,
     });
   } catch (error) {
     console.log(error);
@@ -29,15 +39,24 @@ const commentRepliesGet = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const comments = await prisma.comment.findMany({
+    const commentRecords = await prisma.comment.findMany({
       where: {
         parentCommentId: id,
       },
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
+      },
     });
+
+    const comments = commentRecords.map(({ user, ...rest }) => ({ ...rest, username: user.username }));
     res.status(200).json({
       success: true,
       count: comments.length,
-      comments,
+      data: comments,
     });
   } catch (error) {
     console.log(error);
@@ -52,15 +71,25 @@ const commentsInPostGet = async (req, res) => {
   const { id } = req.params;
 
   try {
-    const comments = await prisma.comment.findMany({
+    const commentRecords = await prisma.comment.findMany({
       where: {
         postId: id,
+        parentCommentId: null,
+      },
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
       },
     });
+
+    const comments = commentRecords.map(({ user, ...rest }) => ({ ...rest, username: user.username }));
     res.status(200).json({
       success: true,
       count: comments.length,
-      comments,
+      data: comments,
     });
   } catch (error) {
     console.log(error);
@@ -82,17 +111,27 @@ const commentCreate = async (req, res) => {
   }
 
   try {
-    const comment = await prisma.comment.create({
+    const commentRecord = await prisma.comment.create({
       data: {
         postId: postId,
         content: content,
         userId: userId,
         parentCommentId: parentCommentId,
       },
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
+      },
     });
+
+    const { user, ...rest } = commentRecord;
+    const comment = { ...rest, username: user.username };
     res.status(200).json({
       success: true,
-      comment,
+      data: comment,
     });
   } catch (error) {
     console.error(error);
@@ -127,11 +166,20 @@ const commentUpdate = async (req, res) => {
         id: id,
       },
       data: updateData,
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
+      },
     });
 
+    const { user, ...rest } = updatedComment;
+    const comment = { ...rest, username: user.username };
     res.status(200).json({
       success: true,
-      comment: updatedComment,
+      data: comment,
     });
   } catch (error) {
     console.error(error);

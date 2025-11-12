@@ -10,7 +10,7 @@ const communityListGet = async (req, res) => {
     res.status(200).json({
       success: true,
       count: communities.length,
-      communities,
+      data: communities,
     });
   } catch (error) {
     console.log(error);
@@ -32,7 +32,7 @@ const communityRandomGet = async (req, res) => {
     res.status(200).json({
       success: true,
       count: communities.length,
-      communities,
+      data: communities,
     });
   } catch (error) {
     console.log(error);
@@ -57,7 +57,7 @@ const communitySearch = async (req, res) => {
     res.status(200).json({
       success: true,
       count: communities.length,
-      communities,
+      data: communities,
     });
   } catch (error) {
     console.log(error);
@@ -88,7 +88,7 @@ const communityGet = async (req, res) => {
     res.status(200).json({
       success: true,
       count: community.count,
-      community,
+      data: community,
     });
   } catch (error) {
     console.log(error);
@@ -132,7 +132,7 @@ const communityUsersGet = async (req, res) => {
     res.status(200).json({
       success: true,
       count: users.length,
-      users,
+      data: users,
     });
   } catch (error) {
     console.log(error);
@@ -271,7 +271,7 @@ const communityCreate = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      community: newCommunity,
+      data: newCommunity,
     });
   } catch (error) {
     console.error(error);
@@ -324,7 +324,7 @@ const communityUpdate = async (req, res) => {
     });
     res.status(200).json({
       success: true,
-      community: updatedCommunity,
+      data: updatedCommunity,
     });
   } catch (error) {
     console.error(err);
