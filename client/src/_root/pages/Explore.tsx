@@ -39,10 +39,10 @@ function Explore() {
       <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
         <div className="flex flex-wrap justify-between gap-3 p-4">
           <div className="flex min-w-72 flex-col gap-3">
-            <p className="text-[#110d1b] tracking-light text-[32px] font-bold leading-tight">
+            <p className="text-foreground tracking-light text-[32px] font-bold leading-tight">
               Explore Communities
             </p>
-            <p className="text-[#5f4c9a] text-sm font-normal leading-normal">
+            <p className="text-muted-foreground text-sm font-normal leading-normal">
               Discover and join communities that align with your interests and expertise.
             </p>
           </div>
@@ -54,7 +54,7 @@ function Explore() {
         />
 
         {(searchLoading || loadingFeatured) && (
-          <p className="text-center text-gray-500 py-6">Loading communities...</p>
+          <p className="text-center text-muted-foreground py-6">Loading communities...</p>
         )}
 
         {searchError && (
@@ -72,3 +72,7 @@ function Explore() {
 }
 
 export default Explore;
+
+
+
+

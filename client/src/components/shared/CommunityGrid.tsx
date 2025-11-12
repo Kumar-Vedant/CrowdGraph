@@ -15,8 +15,8 @@ function CommunityCard({ id, title, description, createdAt, imageUrl }: Communit
                     style={{ backgroundImage: `url("${imageUrl}")` }}
                 ></div>
                 <div>
-                    <p className="text-[#110d1b] text-base font-medium leading-normal">{title}</p>
-                    <p className="text-[#5f4c9a] text-sm font-normal leading-normal">{description}</p>
+                    <p className="text-foreground text-base font-medium leading-normal">{title}</p>
+                    <p className="text-muted-foreground text-sm font-normal leading-normal">{description}</p>
                 </div>
             </div>
         </Link>
@@ -40,3 +40,6 @@ function CommunityGrid({ communities }: { communities: Community[] }) {
 }
 
 export default CommunityGrid
+
+
+

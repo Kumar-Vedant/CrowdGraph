@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/apiHook";
 import { getCommunitiesOfUser } from "@/services/api";
 import type { Community } from "@/schema";
+import { themes } from "@/theme/themes";
 
 function Profile() {
   const { user } = useAuth();
@@ -45,24 +47,24 @@ function Profile() {
                 }}
               ></div>
               <div className="flex flex-col justify-center">
-                <p className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em]">{user.username}</p>
-                {/* <p className="text-[#5f4c9a] text-base font-normal leading-normal">AI Enthusiast | Knowledge Graph Contributor</p> */}
-                <p className="text-[#5f4c9a] text-base font-normal leading-normal">Joined {user?.createdAt}</p>
+                <p className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em]">{user.username}</p>
+                {/* <p className="text-muted-foreground text-base font-normal leading-normal">AI Enthusiast | Knowledge Graph Contributor</p> */}
+                <p className="text-muted-foreground text-base font-normal leading-normal">Joined {user?.createdAt}</p>
               </div>
             </div>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-[#d5cfe7] gap-6 px-2 sm:px-4">
+        <div className="flex border-b border-border gap-6 px-2 sm:px-4">
           {tabs.map((tab) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
               className={`pb-3 pt-4 font-bold text-sm border-b-[3px] transition ${
                 activeTab === tab.key
-                  ? "border-b-[#4913ec] text-[#110d1b]"
-                  : "border-transparent text-[#5f4c9a] hover:text-[#110d1b]"
+                  ? "border-b-primary text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab.label}
@@ -89,7 +91,7 @@ const Overview = ({ communities }: { communities: Community[] }) => {
   
   return (
     <div>
-      <h2 className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+      <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
         My Communities
       </h2>
 
@@ -100,8 +102,8 @@ const Overview = ({ communities }: { communities: Community[] }) => {
             key={role}
             className={`px-4 py-1 rounded-full text-sm font-medium transition
               ${filter === role
-                ? "bg-[#4913ec] text-white shadow-[0_2px_6px_rgba(73,19,236,0.3)]"
-                : "bg-[#eae7f3] text-[#5f4c9a] hover:bg-[#d5cfe7]"}
+                ? "bg-primary text-white shadow-[0_2px_6px_rgba(147,51,234,0.3)]"
+                : "bg-muted text-muted-foreground hover:bg-muted/80"}
             `}
             onClick={() => setFilter(role)}
           >
@@ -113,26 +115,26 @@ const Overview = ({ communities }: { communities: Community[] }) => {
       {/* Communities List */}
       <div className="px-4 py-3 flex flex-col gap-3">
         {filtered.length === 0 ? (
-          <div className="text-[#5f4c9a] italic px-2 py-3 rounded-lg bg-[#f9f8fc] text-center">
+          <div className="text-muted-foreground italic px-2 py-3 rounded-lg bg-muted text-center">
             No {filter.toLowerCase()} communities found.
           </div>
         ) : (
           filtered.map((community, idx) => (
             <Link to={`/community/${community.id}`} key={idx}>
               <div
-                className="flex justify-between items-center p-4 bg-white rounded-lg shadow-sm border border-[#d5cfe7] hover:shadow-md transition"
+                className="flex justify-between items-center p-4 bg-card rounded-lg shadow-sm border border-border hover:shadow-md transition"
               >
                 <div className="flex flex-col">
-                <span className="text-[#110d1b] font-semibold text-base">{community.title}</span>
-                <span className="text-[#5f4c9a] text-sm mt-1">Reputation: {'na' || community.reputation}</span>
+                <span className="text-foreground font-semibold text-base">{community.title}</span>
+                <span className="text-muted-foreground text-sm mt-1">Role: {community.role || 'Member'}</span>
               </div>
               <span
                 className={`px-3 py-1 rounded-lg text-sm font-medium ${
                   community.role === "Owner"
-                    ? "bg-[#eae7f3] text-[#110d1b]"
+                    ? "bg-primary/10 text-primary"
                     : community.role === "Admin"
-                    ? "bg-[#f2edf9] text-[#3f2b78]"
-                    : "bg-[#f9f8fc] text-[#5f4c9a]"
+                    ? "bg-secondary/10 text-secondary"
+                    : "bg-muted text-muted-foreground"
                 }`}
               >
                 {community.role}
@@ -161,21 +163,21 @@ const Contributions = () => {
 
   return (
     <div>
-      <h2 className="text-[#110d1b] text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+      <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
         Contribution History
       </h2>
 
       {/* Filter Tabs */}
       <div className="flex px-4 py-3">
-        <div className="flex h-10 flex-1 items-center justify-center rounded-lg bg-[#eae7f3] p-1">
+        <div className="flex h-10 flex-1 items-center justify-center rounded-lg bg-muted p-1">
           {["Approved", "Pending"].map((status) => (
             <label
               key={status}
               className={`flex cursor-pointer h-full grow items-center justify-center overflow-hidden rounded-lg px-2 text-sm font-medium leading-normal transition-all
                 ${
                   filter === status
-                    ? "bg-[#f9f8fc] shadow-[0_0_4px_rgba(0,0,0,0.1)] text-[#110d1b]"
-                    : "text-[#5f4c9a]"
+                    ? "bg-background shadow-[0_0_4px_rgba(0,0,0,0.1)] text-foreground"
+                    : "text-muted-foreground"
                 }`}
             >
               <span className="truncate">{status}</span>
@@ -194,28 +196,28 @@ const Contributions = () => {
 
       {/* Table */}
       <div className="px-4 py-3 @container">
-        <div className="flex overflow-hidden rounded-lg border border-[#d5cfe7] bg-[#f9f8fc]">
+        <div className="flex overflow-hidden rounded-lg border border-border bg-card">
           <table className="flex-1">
             <thead>
-              <tr className="bg-[#f9f8fc]">
-                <th className="px-4 py-3 text-left text-[#110d1b] w-[400px] text-sm font-medium leading-normal">
+              <tr className="bg-muted">
+                <th className="px-4 py-3 text-left text-foreground w-[400px] text-sm font-medium leading-normal">
                   Contribution
                 </th>
-                <th className="px-4 py-3 text-left text-[#110d1b] w-[400px] text-sm font-medium leading-normal">
+                <th className="px-4 py-3 text-left text-foreground w-[400px] text-sm font-medium leading-normal">
                   Date
                 </th>
-                <th className="px-4 py-3 text-left text-[#110d1b] w-60 text-sm font-medium leading-normal">
+                <th className="px-4 py-3 text-left text-foreground w-60 text-sm font-medium leading-normal">
                   Status
                 </th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((item, i) => (
-                <tr key={i} className="border-t border-t-[#d5cfe7]">
-                  <td className="h-[72px] px-4 py-2 w-[400px] text-[#110d1b] text-sm font-normal leading-normal">
+                <tr key={i} className="border-t border-t-border">
+                  <td className="h-[72px] px-4 py-2 w-[400px] text-foreground text-sm font-normal leading-normal">
                     {item.title}
                   </td>
-                  <td className="h-[72px] px-4 py-2 w-[400px] text-[#5f4c9a] text-sm font-normal leading-normal">
+                  <td className="h-[72px] px-4 py-2 w-[400px] text-muted-foreground text-sm font-normal leading-normal">
                     {item.date}
                   </td>
                   <td className="h-[72px] px-4 py-2 w-60 text-sm font-normal leading-normal">
@@ -223,8 +225,8 @@ const Contributions = () => {
                       className={`flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 w-full
                         ${
                           item.status === "Approved"
-                            ? "bg-[#eae7f3] text-[#110d1b]"
-                            : "bg-[#fff2cc] text-[#7a5d00]"
+                            ? "bg-muted text-foreground"
+                            : "bg-warning/20 text-warning-foreground"
                         } text-sm font-medium leading-normal`}
                     >
                       <span className="truncate">{item.status}</span>
@@ -234,7 +236,7 @@ const Contributions = () => {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-[#5f4c9a] text-sm italic">
+                  <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground text-sm italic">
                     No {filter.toLowerCase()} contributions yet.
                   </td>
                 </tr>
@@ -248,31 +250,163 @@ const Contributions = () => {
 };
 
 const Settings = ({ user }: { user: any }) => {
+  const { currentTheme, setTheme, availableThemes } = useTheme();
+  
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-[#110d1b] text-xl sm:text-2xl font-bold pb-3">Settings</h2>
-      <p className="text-[#5f4c9a] text-sm pb-4">Manage your account settings and preferences.</p>
+      <h2 className="text-foreground text-xl sm:text-2xl font-bold pb-3">Settings</h2>
+      <p className="text-muted-foreground text-sm pb-4">Manage your account settings and preferences.</p>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-[#110d1b]">Username</label>
-          <input
-            type="text"
-            defaultValue={user.username}
-            className="mt-1 block w-full rounded-lg border border-[#d5cfe7] px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-[#110d1b]">Email</label>
-          <input
-            type="email"
-            defaultValue={user.email}
-            disabled
-            className="mt-1 block w-full rounded-lg border border-[#d5cfe7] bg-gray-50 px-3 py-2 text-sm"
-          />
+      <div className="space-y-6">
+        {/* Account Settings */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-foreground">Account</h3>
+          <div>
+            <label className="block text-sm font-medium text-foreground">Username</label>
+            <input
+              type="text"
+              defaultValue={user.username}
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-foreground">Password</label>
+            <input
+              type="password"
+              defaultValue={user.password}
+              className="mt-1 block w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
         </div>
 
-        <button className="mt-3 bg-violet-600 hover:bg-violet-700 text-white text-sm px-4 py-2 rounded-lg transition">
+        {/* Theme Settings */}
+        <div className="space-y-4 pt-4 border-t border-border">
+          <h3 className="text-lg font-semibold text-foreground">Appearance</h3>
+          
+          {/* Light Themes Section */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-3">Light Themes</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {availableThemes.filter(name => ['purple', 'ocean', 'rose'].includes(name)).map((themeName) => {
+                const theme = themes[themeName];
+                const isActive = currentTheme === themeName;
+                
+                return (
+                  <button
+                    key={themeName}
+                    onClick={() => setTheme(themeName)}
+                    className={`relative p-4 rounded-lg border-2 transition-all ${
+                      isActive
+                        ? 'border-primary shadow-lg scale-105'
+                        : 'border-border hover:border-primary/50 hover:shadow-md'
+                    }`}
+                  >
+                    {/* Theme Preview */}
+                    <div className="flex gap-1 mb-2">
+                      <div
+                        className="w-8 h-8 rounded"
+                        style={{ backgroundColor: theme.colors.primary }}
+                      />
+                      <div
+                        className="w-8 h-8 rounded"
+                        style={{ backgroundColor: theme.colors.secondary }}
+                      />
+                      <div
+                        className="w-8 h-8 rounded"
+                        style={{ backgroundColor: theme.colors.accent }}
+                      />
+                    </div>
+                    
+                    {/* Theme Name */}
+                    <p className="text-sm font-semibold text-foreground text-left">
+                      {theme.name}
+                    </p>
+                    
+                    {/* Active Indicator */}
+                    {isActive && (
+                      <div className="absolute top-2 right-2">
+                        <svg
+                          className="w-5 h-5 text-primary"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Dark Themes Section */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-3">Dark Themes</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {availableThemes.filter(name => ['midnight', 'forest', 'sunset'].includes(name)).map((themeName) => {
+                const theme = themes[themeName];
+                const isActive = currentTheme === themeName;
+                
+                return (
+                  <button
+                    key={themeName}
+                    onClick={() => setTheme(themeName)}
+                    className={`relative p-4 rounded-lg border-2 transition-all ${
+                      isActive
+                        ? 'border-primary shadow-lg scale-105'
+                        : 'border-border hover:border-primary/50 hover:shadow-md'
+                    }`}
+                  >
+                    {/* Theme Preview */}
+                    <div className="flex gap-1 mb-2">
+                      <div
+                        className="w-8 h-8 rounded"
+                        style={{ backgroundColor: theme.colors.primary }}
+                      />
+                      <div
+                        className="w-8 h-8 rounded"
+                        style={{ backgroundColor: theme.colors.secondary }}
+                      />
+                      <div
+                        className="w-8 h-8 rounded"
+                        style={{ backgroundColor: theme.colors.accent }}
+                      />
+                    </div>
+                    
+                    {/* Theme Name */}
+                    <p className="text-sm font-semibold text-foreground text-left">
+                      {theme.name}
+                    </p>
+                    
+                    {/* Active Indicator */}
+                    {isActive && (
+                      <div className="absolute top-2 right-2">
+                        <svg
+                          className="w-5 h-5 text-primary"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <button className="mt-3 bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2 rounded-lg transition">
           Save Changes
         </button>
       </div>
@@ -281,3 +415,8 @@ const Settings = ({ user }: { user: any }) => {
 };
 
 export default Profile;
+
+
+
+
+

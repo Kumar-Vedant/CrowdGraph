@@ -5,9 +5,9 @@ function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <section className="flex items-center justify-between whitespace-nowrap border-b border-solid border-b-[#eae7f3] px-10 py-3">
+    <section className="flex items-center justify-between whitespace-nowrap border-b border-solid border-border px-10 py-3">
           <Link to="/" className="">
-            <div className="flex items-center gap-4 text-[#110d1b]">
+            <div className="flex items-center gap-4 text-foreground">
               <div className="size-4">
                 <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path
@@ -22,28 +22,28 @@ function Navbar() {
                   ></path>
                 </svg>
               </div>
-              <h2 className="text-[#110d1b] text-lg font-bold leading-tight tracking-[-0.015em]">CrowdGraph</h2>
+              <h2 className="text-foreground text-lg font-bold leading-tight tracking-[-0.015em]">CrowdGraph</h2>
             </div>
           </Link>
           <div className="flex flex-1 justify-end gap-8">
             <div className="flex items-center gap-9">
-              <Link className="text-[#110d1b] text-sm font-medium leading-normal" to="/explore">Explore</Link>
-              <Link className="text-[#110d1b] text-sm font-medium leading-normal" to="https://github.com/Kumar-Vedant/CrowdGraph" target="_blank">Contribute</Link>
-              {/* <Link className="text-[#110d1b] text-sm font-medium leading-normal" to={`/profile/${user.id || ''}`}>Profile</Link> */}
+              <Link className="text-foreground text-sm font-medium leading-normal" to="/explore">Explore</Link>
+              <Link className="text-foreground text-sm font-medium leading-normal" to="https://github.com/Kumar-Vedant/CrowdGraph" target="_blank">Contribute</Link>
+              {/* <Link className="text-foreground text-sm font-medium leading-normal" to={`/profile/${user.id || ''}`}>Profile</Link> */}
             </div>
             <div className="flex gap-2">
               {user ? (
                 <>
                   <Link to={`/profile`}>
                     <button
-                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#eae7f3] text-[#110d1b] text-sm font-bold leading-normal tracking-[0.015em]"
+                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-muted text-foreground text-sm font-bold leading-normal tracking-[0.015em] hover:bg-muted/80"
                     >
                       <span className="truncate">Profile</span>
                     </button>
                   </Link>
     
                   <button
-                    className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#d42629] text-[#f9f8fc] text-sm font-bold leading-normal tracking-[0.015em]"
+                    className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-destructive text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-destructive/90"
                     onClick={() => logout()}
                   >
                     <span className="truncate">Log Out</span>
@@ -54,14 +54,14 @@ function Navbar() {
                 <>
                   <Link to="/signup">
                     <button
-                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#4913ec] text-[#f9f8fc] text-sm font-bold leading-normal tracking-[0.015em]"
+                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90"
                     >
                       <span className="truncate">Sign Up</span>
                   </button>
                   </Link>
                   <Link to="/login">
                     <button
-                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-[#eae7f3] text-[#110d1b] text-sm font-bold leading-normal tracking-[0.015em]"
+                      className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-muted text-foreground text-sm font-bold leading-normal tracking-[0.015em] hover:bg-muted/80"
                     >
                       <span className="truncate">Log In</span>
                     </button>
@@ -75,3 +75,6 @@ function Navbar() {
 }
 
 export default Navbar
+
+
+

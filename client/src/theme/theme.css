@@ -1,0 +1,88 @@
+/* Theme Variables */
+:root {
+  /* These will be dynamically set by ThemeContext */
+  /* Default purple theme values */
+  --color-primary: #9333ea;
+  --color-primaryDark: #7e22ce;
+  --color-primaryLight: #a855f7;
+  --color-secondary: #5f4c9a;
+  --color-background: #ffffff;
+  --color-surface: #f9f8fc;
+  --color-surfaceHover: #f3f2f7;
+  --color-text: #110d1b;
+  --color-textSecondary: #5f4c9a;
+  --color-border: #e5e7eb;
+  --color-borderLight: #f3f4f6;
+  --color-accent: #9333ea;
+  --color-accentLight: #eae7f3;
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-cardBg: #ffffff;
+  --color-cardBorder: #e5e7eb;
+  --color-inputBg: #ffffff;
+  --color-inputBorder: #d1d5db;
+  --color-buttonPrimary: #9333ea;
+  --color-buttonPrimaryHover: #7e22ce;
+  --color-buttonSecondary: #eae7f3;
+  --color-buttonSecondaryHover: #ddd6f0;
+  --color-sidebar: #f9f8fc;
+  --color-navbar: #ffffff;
+}
+
+/* Theme Utility Classes */
+.theme-bg-primary {
+  background-color: var(--color-primary);
+}
+
+.theme-bg-surface {
+  background-color: var(--color-surface);
+}
+
+.theme-bg-card {
+  background-color: var(--color-cardBg);
+  border-color: var(--color-cardBorder);
+}
+
+.theme-text {
+  color: var(--color-text);
+}
+
+.theme-text-secondary {
+  color: var(--color-textSecondary);
+}
+
+.theme-border {
+  border-color: var(--color-border);
+}
+
+.theme-button-primary {
+  background-color: var(--color-buttonPrimary);
+  color: white;
+}
+
+.theme-button-primary:hover {
+  background-color: var(--color-buttonPrimaryHover);
+}
+
+.theme-button-secondary {
+  background-color: var(--color-buttonSecondary);
+  color: var(--color-text);
+}
+
+.theme-button-secondary:hover {
+  background-color: var(--color-buttonSecondaryHover);
+}
+
+/* Smooth theme transitions */
+* {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Disable transitions for certain elements */
+button,
+input,
+select,
+textarea {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}

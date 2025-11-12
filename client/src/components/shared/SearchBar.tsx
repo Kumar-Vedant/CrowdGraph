@@ -24,7 +24,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
           {/* Icon Section */}
           <div
-            className="text-[#5f4c9a] flex border-none bg-[#eae7f3] items-center justify-center pl-4 rounded-l-lg border-r-0"
+            className="text-muted-foreground flex border-none bg-muted items-center justify-center pl-4 rounded-l-lg border-r-0"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -44,7 +44,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#110d1b] focus:outline-0 focus:ring-0 border-none bg-[#eae7f3] h-full placeholder:text-[#5f4c9a] px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+            className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-foreground focus:outline-0 focus:ring-0 border-none bg-muted h-full placeholder:text-muted-foreground px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
           />
         </div>
       </label>
@@ -53,3 +53,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
 };
 
 export default SearchBar;
+
+
+
+

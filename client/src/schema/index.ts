@@ -2,6 +2,7 @@ interface User  {
   id: string;
   username: string;
   createdAt: string;
+  reputation?: number;
 }
 
 interface Community {
