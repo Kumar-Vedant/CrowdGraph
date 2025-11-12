@@ -11,11 +11,26 @@ const postListGet = async (req, res) => {
       where: {
         communityId: communityId,
       },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        authorId: true,
+        communityId: true,
+        createdAt: true,
+      },
     });
-    res.status(200).send(posts);
+    res.status(200).json({
+      success: true,
+      count: posts.length,
+      posts,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error fetching Posts");
+    res.json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -27,11 +42,25 @@ const postGet = async (req, res) => {
       where: {
         id: id,
       },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        authorId: true,
+        communityId: true,
+        createdAt: true,
+      },
     });
-    res.status(200).send(post);
+    res.status(200).json({
+      success: true,
+      post,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error fetching Post");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -45,11 +74,27 @@ const postSearch = async (req, res) => {
           mode: "insensitive",
         },
       },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        authorId: true,
+        communityId: true,
+        createdAt: true,
+      },
     });
-    res.status(200).send(posts);
+
+    res.status(200).json({
+      success: true,
+      count: posts.length,
+      posts,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Search failed");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -57,7 +102,10 @@ const postCreate = async (req, res) => {
   const { title, content, authorId, communityId } = req.body;
 
   if (!title || !content || !authorId || !communityId) {
-    return res.status(400).send("Missing required fields: 'title', 'content', 'authorId' and 'communityId' are needed.");
+    return res.status(400).json({
+      success: false,
+      error: "Missing required fields: 'title', 'content', 'authorId' and 'communityId' are needed.",
+    });
   }
 
   try {
@@ -68,11 +116,26 @@ const postCreate = async (req, res) => {
         authorId: authorId,
         communityId: communityId,
       },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        authorId: true,
+        communityId: true,
+        createdAt: true,
+      },
     });
-    res.status(200).send(post);
+
+    res.status(200).json({
+      success: true,
+      post,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to create post");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -82,7 +145,10 @@ const postUpdate = async (req, res) => {
 
   // if no editable fields are provided to update
   if (!title && !content) {
-    return res.status(400).send("No valid fields provided for update. Only 'title' and 'content' are editable");
+    return res.status(400).json({
+      success: false,
+      error: "No valid fields provided for update. Only 'title' and 'content' are editable",
+    });
   }
 
   const updateData = {};
@@ -100,11 +166,26 @@ const postUpdate = async (req, res) => {
         id: id,
       },
       data: updateData,
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        authorId: true,
+        communityId: true,
+        createdAt: true,
+      },
     });
-    res.status(200).send(updatedPost);
+
+    res.status(200).json({
+      success: true,
+      post: updatedPost,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to update post");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -116,10 +197,15 @@ const postDelete = async (req, res) => {
         id: id,
       },
     });
-    res.redirect("/");
+    res.status(200).json({
+      success: true,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to delete post");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 

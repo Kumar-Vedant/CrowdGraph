@@ -3,7 +3,7 @@ import Router from "express";
 import postController from "../controllers/postController.js";
 const postRouter = Router();
 
-postRouter.get("/:communityId", postController.postListGet);
+postRouter.get("/:communityId/community", postController.postListGet);
 postRouter.get("/:id", postController.postGet);
 postRouter.get("/:communityId/search", postController.postSearch);
 postRouter.post("/create", postController.postCreate);

@@ -4,13 +4,61 @@ const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
 
-const userListGet = async (req, res) => {
+const userGet = async (req, res) => {
+  const { id } = req.params;
+
   try {
-    const users = await prisma.user.findMany();
-    res.status(200).send(users);
+    const user = await prisma.user.findUnique({
+      where: {
+        id: id,
+      },
+      select: {
+        id: true,
+        username: true,
+        createdAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      user,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error fetching users");
+    res.status(500).json({
+      success: false,
+      error,
+    });
+  }
+};
+
+const userListGet = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        username: true,
+        createdAt: true,
+      },
+    });
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -23,18 +71,42 @@ const userSearch = async (req, res) => {
           contains: username,
           mode: "insensitive",
         },
+        select: {
+          id: true,
+          username: true,
+          createdAt: true,
+        },
       },
     });
-    res.status(200).send(users);
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      users,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Search failed");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
 const userCommunitiesGet = async (req, res) => {
   const { id } = req.params;
   try {
+    const userExists = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!userExists) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
     const userCommunities = await prisma.userCommunity.findMany({
       where: {
         userId: id,
@@ -56,7 +128,10 @@ const userCommunitiesGet = async (req, res) => {
     });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error fetching joined communities");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -64,7 +139,10 @@ const userCreate = async (req, res) => {
   const { username, password } = req.body;
 
   if (!username || !password) {
-    return res.status(400).send("Missing required fields: 'username' and 'password' are needed");
+    return res.status(400).json({
+      success: false,
+      error: "Missing required fields: 'username' and 'password' are needed",
+    });
   }
 
   try {
@@ -74,11 +152,22 @@ const userCreate = async (req, res) => {
         username: username,
         passwordHash: hashedPassword,
       },
+      select: {
+        id: true,
+        username: true,
+        createdAt: true,
+      },
     });
-    res.status(200).send(user);
+    res.status(200).json({
+      success: true,
+      user,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to create user");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -88,7 +177,10 @@ const userUpdate = async (req, res) => {
 
   // if no editable fields are provided to update
   if (!username && !password) {
-    return res.status(400).send("No valid fields provided for update. Only 'username' and 'password' are editable");
+    return res.status(400).json({
+      success: false,
+      error: "No valid fields provided for update. Only 'username' and 'password' are editable",
+    });
   }
 
   const updateData = {};
@@ -97,6 +189,18 @@ const userUpdate = async (req, res) => {
   }
 
   try {
+    const userExists = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!userExists) {
+      return res.status(404).json({
+        success: false,
+        error: "User not found.",
+      });
+    }
+
     if (password) {
       updateData.passwordHash = await bcrypt.hash(password, 10);
     }
@@ -104,30 +208,62 @@ const userUpdate = async (req, res) => {
     const user = await prisma.user.update({
       where: { id },
       data: updateData,
+      select: {
+        id: true,
+        username: true,
+        createdAt: true,
+      },
     });
-    res.status(200).send(user);
+    res.status(200).json({
+      success: true,
+      user,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to update user");
+
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
 const userDelete = async (req, res) => {
   const { id } = req.params;
+
   try {
+    const userExists = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+
+    if (!userExists) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
     await prisma.user.delete({
       where: {
         id: id,
       },
     });
-    res.redirect("/user");
+    res.status(200).json({
+      success: true,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Delete failed");
+
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
 export default {
+  userGet,
   userCommunitiesGet,
   userListGet,
   userSearch,

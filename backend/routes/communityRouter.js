@@ -9,6 +9,7 @@ communityRouter.get("/search", communityController.communitySearch);
 communityRouter.get("/:id", communityController.communityGet);
 communityRouter.get("/:id/users", communityController.communityUsersGet);
 communityRouter.post("/:id/:userId", communityController.communityJoinUser);
+communityRouter.delete("/:id/:userId", communityController.communityLeaveUser);
 communityRouter.get("/:id/graph", communityController.communityGraphGet);
 communityRouter.get("/:id/forum", communityController.communityForumGet);
 communityRouter.post("/create", communityController.communityCreate);

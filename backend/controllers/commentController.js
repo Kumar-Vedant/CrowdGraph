@@ -12,10 +12,16 @@ const commentGet = async (req, res) => {
         id: id,
       },
     });
-    res.status(200).send(comment);
+    res.status(200).json({
+      success: true,
+      comment,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error fetching comment");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -28,10 +34,17 @@ const commentRepliesGet = async (req, res) => {
         parentCommentId: id,
       },
     });
-    res.status(200).send(comments);
+    res.status(200).json({
+      success: true,
+      count: comments.length,
+      comments,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error fetching comments");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -44,10 +57,17 @@ const commentsInPostGet = async (req, res) => {
         postId: id,
       },
     });
-    res.status(200).send(comments);
+    res.status(200).json({
+      success: true,
+      count: comments.length,
+      comments,
+    });
   } catch (error) {
     console.log(error);
-    res.status(500).send("Error fetching comments");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -55,7 +75,10 @@ const commentCreate = async (req, res) => {
   const { postId, userId, content, parentCommentId } = req.body;
 
   if (!postId || !content || !userId) {
-    return res.status(400).send("Missing required fields: 'postId', 'content' and 'userId' are needed.");
+    return res.status(400).json({
+      success: false,
+      error: "Missing required fields: 'postId', 'content' and 'userId' are needed.",
+    });
   }
 
   try {
@@ -67,10 +90,16 @@ const commentCreate = async (req, res) => {
         parentCommentId: parentCommentId,
       },
     });
-    res.status(200).send(comment);
+    res.status(200).json({
+      success: true,
+      comment,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to create comment");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -80,7 +109,10 @@ const commentUpdate = async (req, res) => {
 
   // if no editable fields are provided to update
   if (!content) {
-    return res.status(400).send("No valid fields provided for update. Only 'content' is editable");
+    return res.status(400).json({
+      success: false,
+      error: "No valid fields provided for update. Only 'content' is editable",
+    });
   }
 
   const updateData = {};
@@ -96,10 +128,17 @@ const commentUpdate = async (req, res) => {
       },
       data: updateData,
     });
-    res.status(200).send(updatedComment);
+
+    res.status(200).json({
+      success: true,
+      comment: updatedComment,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to update comment");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
@@ -111,10 +150,16 @@ const commentDelete = async (req, res) => {
         id: id,
       },
     });
-    res.redirect("/");
+
+    res.status(200).json({
+      success: true,
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).send("Failed to delete comment");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   }
 };
 
