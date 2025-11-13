@@ -18,6 +18,7 @@ interface Comment {
   id: string;
   postId: string;
   userId: string;
+  username?: string;
   content: string;
   createdAt: Date;
   parentCommentId: string;
@@ -28,6 +29,7 @@ interface Post {
   title: string;
   content: string;
   authorId: string;
+  authorName?: string;
   communityId: string;
   createdAt: Date;
 }
@@ -35,10 +37,8 @@ interface Post {
 interface Node {
   id?: string;
   labels: string[];
-  properties: [
-    { key: "name"; value: string },   // mandatory first element
-    ...{ key: string; value: any }[]  // allow additional key-value pairs
-  ];
+  name: string;
+  properties: { key: string; value: any }[];
 }
 
 interface Edge {
@@ -49,5 +49,42 @@ interface Edge {
   properties: { key: string; value: any }[];
 }
 
+interface NodeProposal {
+  id: string;
+  labels: string[];
+  name: string;
+  properties: { key: string; value: any }[]
+  userId: string;
+  userName?: string;
+  communityId?: string;
+  createdAt: Date;
+  upvotes: number;
+  downvotes: number;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+}
 
-export type { User, Community, Post, Comment, Node, Edge };
+interface EdgeProposal {
+  id: string;
+  type: string;
+  properties: { key: string; value: any }[];
+  userId: string;
+  userName?: string;
+  communityId?: string;
+  createdAt: Date;
+  upvotes: number;
+  downvotes: number;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+}
+
+interface GraphProposals {
+  nodeProposals: NodeProposal[];
+  edgeProposals: EdgeProposal[];
+}
+
+interface RouteResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string | null;
+}
+
+export type { User, Community, Post, Comment, Node, Edge, NodeProposal, EdgeProposal, RouteResponse, GraphProposals };

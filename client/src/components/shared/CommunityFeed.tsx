@@ -16,20 +16,6 @@ import {
 import { useApi } from "@/hooks/apiHook";
 import SearchBar from "./SearchBar";
 
-interface CommentWithUser extends Comment {
-  user: {
-    id: string;
-    username: string;
-  };
-}
-
-interface PostWithAuthor extends Post {
-  author: {
-    id: string;
-    username: string;
-  };
-}
-
 interface CommunityFeedProps {
   communityId: string;
   isMember: boolean;
@@ -41,9 +27,9 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
   const { data: postsData, loading: postsLoading, callApi: callPostsApi } =
     useApi(getPostsInCommunity);
 
-  const [posts, setPosts] = useState<PostWithAuthor[]>([]);
-  const [comments, setComments] = useState<Record<string, CommentWithUser[]>>({});
-  const [replies, setReplies] = useState<Record<string, CommentWithUser[]>>({});
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [comments, setComments] = useState<Record<string, Comment[]>>({});
+  const [replies, setReplies] = useState<Record<string, Comment[]>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
   const [showReplyBox, setShowReplyBox] = useState<Record<string, boolean>>({});
@@ -51,7 +37,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostContent, setNewPostContent] = useState("");
   const [posting, setPosting] = useState(false);
-  const [allPosts, setAllPosts] = useState<PostWithAuthor[]>([]);
+  const [allPosts, setAllPosts] = useState<Post[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
   const [loadingReplies, setLoadingReplies] = useState<Record<string, boolean>>({});
@@ -82,7 +68,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
       setLoadingComments((prev) => ({ ...prev, [postId]: true }));
       try {
         const fetchedComments = await getCommentsInPost(postId);
-        const commentsList = fetchedComments?.comments || fetchedComments || [];
+        const commentsList = fetchedComments?.data || fetchedComments || [];
         setComments((prev) => ({ 
           ...prev, 
           [postId]: Array.isArray(commentsList) ? commentsList : [] 
@@ -105,7 +91,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
       setLoadingReplies((prev) => ({ ...prev, [commentId]: true }));
       try {
         const fetchedReplies = await getRepliesToComment(commentId);
-        const repliesList = fetchedReplies?.replies || fetchedReplies || [];
+        const repliesList = fetchedReplies?.data || fetchedReplies || [];
         setReplies((prev) => ({ 
           ...prev, 
           [commentId]: Array.isArray(repliesList) ? repliesList : [] 
@@ -130,7 +116,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
         // This is a reply to a comment - add it to the replies for that parent comment
         setReplies((prev) => ({
           ...prev,
-          [parentId]: [...(prev[parentId] || []), newComment as CommentWithUser],
+          [parentId]: [...(prev[parentId] || []), newComment as Comment],
         }));
         // Hide the reply box after successful submission
         setShowReplyBox((prev) => ({ ...prev, [parentId]: false }));
@@ -138,7 +124,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
         // This is a top-level comment - add it directly to the post's comments
         setComments((prev) => ({
           ...prev,
-          [postId]: [...(prev[postId] || []), newComment as CommentWithUser],
+          [postId]: [...(prev[postId] || []), newComment as Comment],
         }));
       }
       
@@ -155,7 +141,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
     setPosting(true);
     try {
       const createdPost = await createPost(communityId, user.id, newPostTitle.trim(), newPostContent.trim());
-      const newPost = createdPost as PostWithAuthor;
+      const newPost = createdPost as Post;
       setPosts((prev) => [newPost, ...prev]);
       setAllPosts((prev) => [newPost, ...prev]);
       setNewPostTitle("");
@@ -189,7 +175,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
     }
   };
 
-  const renderCommentTree = (comment: CommentWithUser, depth = 0) => {
+  const renderCommentTree = (comment: Comment, depth = 0) => {
     const hasReplies = expandedReplies[comment.id];
     const isReplyBoxVisible = showReplyBox[comment.id];
     
@@ -199,7 +185,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
         className={`ml-${depth * 4} mt-3 border-l border-border pl-3`}
       >
         <div className="bg-muted rounded-md p-3 hover:bg-muted/80 transition">
-          <p className="font-semibold text-sm text-foreground">{comment.user?.username || "Unknown User"}</p>
+          <p className="font-semibold text-sm text-foreground">{comment.username || "Unknown User"}</p>
           <p className="text-foreground text-sm">{comment.content}</p>
           <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
             <span>{new Date(comment.createdAt).toLocaleString()}</span>
@@ -355,7 +341,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                 {post.title}
               </CardTitle>
               <p className="text-sm text-muted-foreground">
-                Posted by <span className="font-medium">{post.author?.username || "Unknown"}</span> •{" "}
+                Posted by <span className="font-medium">{post.authorName || "Unknown"}</span> •{" "}
                 {new Date(post.createdAt).toLocaleString()}
               </p>
             </CardHeader>

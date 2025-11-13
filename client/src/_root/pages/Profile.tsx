@@ -11,6 +11,7 @@ function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<"overview" | "contributions" | "settings">("overview");
+  const { logout } = useAuth();
 
   // Redirect to login only once (no infinite loop)
   useEffect(() => {
@@ -37,7 +38,7 @@ function Profile() {
     <div className="flex justify-center px-6 py-8 sm:px-10 lg:px-40">
       <div className="flex flex-col w-full max-w-[960px] gap-6">
         {/* Profile Header */}
-        <div className="flex p-4 @container">
+        <div className="flex items-center p-4 @container">
           <div className="flex w-full flex-col gap-4 @[520px]:flex-row @[520px]:justify-between @[520px]:items-center">
             <div className="flex gap-4">
               <div
@@ -52,6 +53,15 @@ function Profile() {
                 <p className="text-muted-foreground text-base font-normal leading-normal">Joined {user?.createdAt}</p>
               </div>
             </div>
+            <button 
+              onClick={() => logout()}
+              className="flex items-center justify-center gap-2 bg-destructive hover:bg-destructive/90 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md h-fit self-center"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+              </svg>
+              Log Out
+            </button>
           </div>
         </div>
 
@@ -406,9 +416,11 @@ const Settings = ({ user }: { user: any }) => {
           </div>
         </div>
 
-        <button className="mt-3 bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2 rounded-lg transition">
-          Save Changes
-        </button>
+        <div className="flex gap-3 mt-3">
+          <button className="bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2 rounded-lg transition">
+            Save Changes
+          </button>
+        </div>
       </div>
     </div>
   );

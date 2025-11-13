@@ -1,8 +1,25 @@
 import { Link } from 'react-router'
 import CommunityGrid from '../../components/shared/CommunityGrid'
-import { communities } from '../../services/data'
+import type { Community } from '@/schema';
+import { useEffect, useState } from 'react';
+import { useApi } from '@/hooks/apiHook';
+import { getFeaturedCommunities } from '@/services/api';
 
 function landing() {
+  const { data: featuredCommunities, loading: loadingFeatured, callApi: callFeaturedCommunities } = useApi(getFeaturedCommunities);
+  const [communitiesToShow, setCommunitiesToShow] = useState<Community[]>([]);
+
+  // Load featured communities on mount
+  useEffect(() => {
+    callFeaturedCommunities();
+  }, [callFeaturedCommunities]);
+
+  useEffect(() => {
+    if (featuredCommunities) {
+      setCommunitiesToShow(featuredCommunities);
+    }
+  }, [featuredCommunities]);
+
   return (
     <>
         <div className="px-40 flex flex-1 justify-center py-5">
@@ -44,7 +61,7 @@ function landing() {
             </div>
             <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Featured Communities</h2>
             
-            <CommunityGrid communities={communities.slice(0, 5)} />
+            <CommunityGrid communities={communitiesToShow.slice(0, 5)} />
             
             <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Hybrid AI + Human Validation Model</h2>
             <p className="text-foreground text-base font-normal leading-normal pb-3 pt-1 px-4">

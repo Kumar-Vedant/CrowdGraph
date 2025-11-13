@@ -18,7 +18,7 @@ const KnowledgeGraph: React.FC = () => {
     () => ({
       nodes: dummyNodes.map((node) => ({
         id: node.id,
-        label: node.properties.find((p) => p.key === "name")?.value || "Unnamed",
+        label: node.name || "Unnamed",
         group: node.labels[0],
         details: node.properties,
         color: NODE_COLOR,

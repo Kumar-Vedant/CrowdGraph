@@ -7,11 +7,12 @@ import {
   searchCommunityById,
   joinCommunity,
   leaveCommunity,
+  getGraphProposalsInCommunity,
 } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import type { User, Node, Edge } from "@/schema";
+import type { User, Node, Edge, NodeProposal, EdgeProposal, GraphProposals } from "@/schema";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,11 @@ function CommunityDashboard() {
   const { loading: joinLoading, callApi: callJoinApi } = useApi(joinCommunity);
   const { loading: leaveLoading, callApi: callLeaveApi } =
     useApi(leaveCommunity);
+  const {
+    data: proposalsData,
+    loading: proposalsLoading,
+    callApi: callProposalsApi,
+  } = useApi<GraphProposals>(getGraphProposalsInCommunity);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
@@ -102,9 +108,10 @@ function CommunityDashboard() {
 
   // --- Node state ---
   const [nodeLabels, setNodeLabels] = useState<string[]>([]);
+  const [nodeName, setNodeName] = useState<string>("");
   const [nodeProperties, setNodeProperties] = useState<
     { key: string; value: string }[]
-  >([{ key: "name", value: "" }]); // always include name first
+  >([]);
 
   // --- Edge state ---
   const [edgeData, setEdgeData] = useState<Partial<Edge>>({});
@@ -117,8 +124,6 @@ function CommunityDashboard() {
     setNodeProperties([...nodeProperties, { key: "", value: "" }]);
 
   const removeNodeProperty = (index: number) => {
-    // prevent removing the "name" property (index 0)
-    if (index === 0) return;
     setNodeProperties(nodeProperties.filter((_, i) => i !== index));
   };
 
@@ -128,8 +133,6 @@ function CommunityDashboard() {
     value: string
   ) => {
     const updated = [...nodeProperties];
-    // prevent renaming the mandatory "name" key
-    if (index === 0 && field === "key") return;
     updated[index][field] = value;
     setNodeProperties(updated);
   };
@@ -153,6 +156,11 @@ function CommunityDashboard() {
 
   // --- Node submit ---
   const handleNodeSubmit = () => {
+    if (!nodeName.trim()) {
+      alert("Node name is required!");
+      return;
+    }
+    
     // Ensure no property has a key but no value
     for (const prop of nodeProperties) {
       if (prop.key.trim() && !prop.value.trim()) {
@@ -160,21 +168,23 @@ function CommunityDashboard() {
         return;
       }
     }
-    // Ensure first property is always the 'name'
+    
     const formattedProps: Array<{ key: string; value: any }> = nodeProperties
       .filter((p) => p.key.trim() && p.value.trim())
       .map((p) => ({ key: p.key.trim(), value: p.value }));
 
     const newNode: Partial<Node> = {
       labels: nodeLabels.filter((l) => l.trim()),
-      properties: formattedProps as any, // Type assertion for tuple constraint
+      name: nodeName.trim(),
+      properties: formattedProps,
     };
 
     console.log("✅ Node added:", newNode);
 
     setIsModalOpen(false);
     setNodeLabels([]);
-    setNodeProperties([{ key: "name", value: "" }]);
+    setNodeName("");
+    setNodeProperties([]);
   };
 
   // --- Edge submit ---
@@ -214,6 +224,7 @@ function CommunityDashboard() {
   useEffect(() => {
     if (communityId) {
       callCommunityApi(communityId);
+      callProposalsApi(communityId);
     }
   }, [communityId]);
 
@@ -223,6 +234,7 @@ function CommunityDashboard() {
       callOwnerApi(communityData.ownerId);
     }
   }, [communityData?.ownerId, communityId]);
+
 
   // --- Loading states ---
   if (communityLoading)
@@ -349,108 +361,146 @@ function CommunityDashboard() {
               />
             </div>
           </div>
-
+          
+          {/* contribution queue*/}
           <div className="layout-content-container flex flex-col w-[360px]">
-            <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-              AI Suggestions
-            </h2>
-            <div className="p-4">
-              <div className="flex items-stretch justify-between gap-4 rounded-lg">
-                <div className="flex flex-[2_2_0px] flex-col gap-4">
-                  <div className="flex flex-col gap-1">
-                    <p className="text-muted-foreground text-sm font-normal leading-normal">
-                      Suggested Link
-                    </p>
-                    <p className="text-foreground text-base font-bold leading-tight">
-                      Node A to Node B
-                    </p>
-                    <p className="text-muted-foreground text-sm font-normal leading-normal">
-                      AI suggests a link between Node A and Node B based on
-                      recent community contributions.
-                    </p>
-                  </div>
-                  <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 flex-row-reverse bg-muted text-foreground text-sm font-medium leading-normal w-fit">
-                    <span className="truncate">Add Link</span>
-                  </button>
-                </div>
-                <div
-                  className="w-full bg-center bg-no-repeat aspect-video bg-cover rounded-lg flex-1"
-                  style={{
-                    backgroundImage:
-                      'url("https://lh3.googleusercontent.com/aida-public/AB6AXuCPOwhDl4Ep7zGKthwqCHYe0EsEVhwBK9S2sS5RndYROMqMGoJQs7uTZSKfgJd8-euMEW5ameez90069ePXvQilUbiBjSFQiGzGRvmgXbNs3qR5ue_OlR7e8F2amvRQKeTU5hM8VWEtN07qn5VHF3V3S-x_qlhkS1sxDiFp9ZiOj8fNH-eEOBZuhfQEuxNt1JClR_CK7BTLnk7NxG24CfKSrouj7AsWBHOlSOvf_k9or3aabWN4WhPDm_wvEEcCr3493Nt_neF9APQ")',
-                  }}
-                ></div>
-              </div>
-            </div>
             <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
               Contribution Queue
             </h2>
-            <div className="flex items-center gap-4 bg-muted px-4 min-h-[72px] py-2 justify-between">
-              <div className="flex items-center gap-4">
-                <div
-                  className="text-foreground flex items-center justify-center rounded-lg bg-muted shrink-0 size-12"
-                  data-icon="Link"
-                  data-size="24px"
-                  data-weight="regular"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24px"
-                    height="24px"
-                    fill="currentColor"
-                    viewBox="0 0 256 256"
-                  >
-                    <path d="M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,10A56,56,0,0,1,48.38,128.4L72.5,104.28A56,56,0,0,1,149.31,102a8,8,0,1,1-10.64,12,40,40,0,0,0-54.85,1.63L59.7,139.72a40,40,0,0,0,56.58,56.58l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.22,0l-9.94,9.95a8,8,0,0,0,11.32,11.31l9.94-9.94a40,40,0,0,1,56.58,56.58L172.18,140.4A40,40,0,0,1,117.33,142,8,8,0,1,0,106.69,154a56,56,0,0,0,76.81-2.26l24.12-24.12A56.08,56.08,0,0,0,207.62,48.38Z"></path>
+            
+            {proposalsLoading ? (
+              <div className="flex justify-center items-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : proposalsData && (proposalsData.nodeProposals?.length > 0 || proposalsData.edgeProposals?.length > 0) ? (
+              <div className="flex flex-col gap-3 px-4 pb-4">
+                {/* Node Proposals */}
+                {proposalsData.nodeProposals?.filter((p: NodeProposal) => p.status === "PENDING").map((proposal: NodeProposal) => (
+                  <div key={proposal.id} className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24px"
+                        height="24px"
+                        fill="currentColor"
+                        className="text-primary"
+                        viewBox="0 0 256 256"
+                      >
+                        <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm40-68a28,28,0,0,1-28,28h-4v8a8,8,0,0,1-16,0v-8H104a8,8,0,0,1,0-16h36a12,12,0,0,0,0-24H116a28,28,0,0,1,0-56h4V72a8,8,0,0,1,16,0v8h16a8,8,0,0,1,0,16H116a12,12,0,0,0,0,24h24A28,28,0,0,1,168,148Z"></path>
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="text-foreground text-sm font-semibold truncate">
+                          {proposal.name || "New Node"}
+                        </p>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/20 text-warning-foreground shrink-0">
+                          Node
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {proposal.labels.map((label: string, idx: number) => (
+                          <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+                            {label}
+                          </span>
+                        ))}
+                      </div>
+                      <p className="text-muted-foreground text-xs mb-2">
+                        By {proposal.userName || "Unknown"} • {new Date(proposal.createdAt).toLocaleDateString()}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-xs">
+                          <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd"/>
+                          </svg>
+                          <span className="text-success font-medium">{proposal.upvotes}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs">
+                          <svg className="w-4 h-4 text-destructive" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
+                          </svg>
+                          <span className="text-destructive font-medium">{proposal.downvotes}</span>
+                        </div>
+                        <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                          Review →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                {/* Edge Proposals */}
+                {proposalsData.edgeProposals?.filter((p: EdgeProposal) => p.status === "PENDING").map((proposal: EdgeProposal) => (
+                  <div key={proposal.id} className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-center justify-center rounded-lg bg-accent/10 shrink-0 size-12">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="24px"
+                        height="24px"
+                        fill="currentColor"
+                        className="text-accent"
+                        viewBox="0 0 256 256"
+                      >
+                        <path d="M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,10A56,56,0,0,1,48.38,128.4L72.5,104.28A56,56,0,0,1,149.31,102a8,8,0,1,1-10.64,12,40,40,0,0,0-54.85,1.63L59.7,139.72a40,40,0,0,0,56.58,56.58l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.22,0l-9.94,9.95a8,8,0,0,0,11.32,11.31l9.94-9.94a40,40,0,0,1,56.58,56.58L172.18,140.4A40,40,0,0,1,117.33,142,8,8,0,1,0,106.69,154a56,56,0,0,0,76.81-2.26l24.12-24.12A56.08,56.08,0,0,0,207.62,48.38Z"></path>
+                      </svg>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p className="text-foreground text-sm font-semibold truncate">
+                          {proposal.type}
+                        </p>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent shrink-0">
+                          Edge
+                        </span>
+                      </div>
+                      {proposal.properties && proposal.properties.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {proposal.properties.map((prop: { key: string; value: any }, idx: number) => (
+                            <span key={idx} className="text-xs text-muted-foreground">
+                              {prop.key}: {String(prop.value)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      <p className="text-muted-foreground text-xs mb-2">
+                        By {proposal.userName || "Unknown"} • {new Date(proposal.createdAt).toLocaleDateString()}
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1 text-xs">
+                          <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd"/>
+                          </svg>
+                          <span className="text-success font-medium">{proposal.upvotes}</span>
+                        </div>
+                        <div className="flex items-center gap-1 text-xs">
+                          <svg className="w-4 h-4 text-destructive" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
+                          </svg>
+                          <span className="text-destructive font-medium">{proposal.downvotes}</span>
+                        </div>
+                        <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                          Review →
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-12 px-4">
+                <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
+                  <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <div className="flex flex-col justify-center">
-                  <p className="text-foreground text-base font-medium leading-normal line-clamp-1">
-                    Add Link: Node C to Node D
-                  </p>
-                  <p className="text-muted-foreground text-sm font-normal leading-normal line-clamp-2">
-                    Submitted by Alex
-                  </p>
-                </div>
+                <p className="text-muted-foreground text-sm text-center">
+                  No pending proposals
+                </p>
+                <p className="text-muted-foreground text-xs text-center mt-1">
+                  Contributions will appear here for review
+                </p>
               </div>
-              <div className="shrink-0">
-                <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 bg-muted text-foreground text-sm font-medium leading-normal w-fit">
-                  <span className="truncate">Review</span>
-                </button>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 bg-muted px-4 min-h-[72px] py-2 justify-between">
-              <div className="flex items-center gap-4">
-                <div
-                  className="text-foreground flex items-center justify-center rounded-lg bg-muted shrink-0 size-12"
-                  data-icon="PencilSimple"
-                  data-size="24px"
-                  data-weight="regular"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="24px"
-                    height="24px"
-                    fill="currentColor"
-                    viewBox="0 0 256 256"
-                  >
-                    <path d="M227.31,73.37,182.63,28.68a16,16,0,0,0-22.63,0L36.69,152A15.86,15.86,0,0,0,32,163.31V208a16,16,0,0,0,16,16H92.69A15.86,15.86,0,0,0,104,219.31L227.31,96a16,16,0,0,0,0-22.63ZM92.69,208H48V163.31l88-88L180.69,120ZM192,108.68,147.31,64l24-24L216,84.68Z"></path>
-                  </svg>
-                </div>
-                <div className="flex flex-col justify-center">
-                  <p className="text-foreground text-base font-medium leading-normal line-clamp-1">
-                    Edit Node E
-                  </p>
-                  <p className="text-muted-foreground text-sm font-normal leading-normal line-clamp-2">
-                    Submitted by Sarah
-                  </p>
-                </div>
-              </div>
-              <div className="shrink-0">
-                <button className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 bg-muted text-foreground text-sm font-medium leading-normal w-fit">
-                  <span className="truncate">Review</span>
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -491,6 +541,12 @@ function CommunityDashboard() {
                 {/* ------------------ NODE TAB ------------------ */}
                 <TabsContent value="node" className="space-y-3">
                   <Input
+                    placeholder="Node Name (required)"
+                    value={nodeName}
+                    onChange={(e) => setNodeName(e.target.value)}
+                  />
+                  
+                  <Input
                     placeholder="Labels (comma separated)"
                     value={nodeLabels.join(",")}
                     onChange={(e) =>
@@ -506,32 +562,35 @@ function CommunityDashboard() {
                       Properties
                     </p>
 
-                    {nodeProperties.map((prop, index) => (
-                      <div key={index} className="flex gap-2">
-                        <Input
-                          placeholder="Key"
-                          value={prop.key}
-                          disabled={index === 0}
-                          onChange={(e) =>
-                            handleNodePropertyChange(
-                              index,
-                              "key",
-                              e.target.value
-                            )
-                          }
-                        />
-                        <Input
-                          placeholder="Value"
-                          value={prop.value}
-                          onChange={(e) =>
-                            handleNodePropertyChange(
-                              index,
-                              "value",
-                              e.target.value
-                            )
-                          }
-                        />
-                        {index > 0 && (
+                    {nodeProperties.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">
+                        No properties yet. Click below to add.
+                      </p>
+                    ) : (
+                      nodeProperties.map((prop, index) => (
+                        <div key={index} className="flex gap-2">
+                          <Input
+                            placeholder="Key"
+                            value={prop.key}
+                            onChange={(e) =>
+                              handleNodePropertyChange(
+                                index,
+                                "key",
+                                e.target.value
+                              )
+                            }
+                          />
+                          <Input
+                            placeholder="Value"
+                            value={prop.value}
+                            onChange={(e) =>
+                              handleNodePropertyChange(
+                                index,
+                                "value",
+                                e.target.value
+                              )
+                            }
+                          />
                           <Button
                             variant="ghost"
                             onClick={() => removeNodeProperty(index)}
@@ -539,9 +598,9 @@ function CommunityDashboard() {
                           >
                             ✕
                           </Button>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      ))
+                    )}
 
                     <Button
                       variant="outline"

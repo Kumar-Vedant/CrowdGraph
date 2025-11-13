@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import type { RouteResponse } from "@/schema/index";
 
 type ApiStatus<T> = {
   data: T | null;
@@ -21,9 +22,26 @@ export function useApi<T>(apiFn: (...args: any[]) => Promise<T>): ApiStatus<T> {
     setError(null);
     try {
       const response = await apiFn(...args);
-      setData(response);
+      
+      // Check if response has a success attribute
+      if (typeof response === 'object' && response !== null && 'success' in response) {
+        const apiResponse = response as RouteResponse<T>;
+        
+        if (apiResponse.success) {
+          // Extract data if success is true
+          setData(apiResponse.data || null);
+        } else {
+          // Set error if success is false
+          setError(apiResponse.error || "Request failed");
+          setData(null);
+        }
+      } else {
+        // If no success attribute, use the response as is (backward compatibility)
+        setData(response);
+      }
     } catch (err: any) {
       setError(err?.message || "Something went wrong");
+      setData(null);
     } finally {
       setLoading(false);
     }
