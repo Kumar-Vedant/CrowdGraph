@@ -19,17 +19,18 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <div className="px-4 py-3">
-      <label className="flex flex-col min-w-40 h-12 w-full">
+    <div className="px-2 sm:px-4 py-3">
+      <label className="flex flex-col min-w-40 h-10 sm:h-12 w-full">
         <div className="flex w-full flex-1 items-stretch rounded-lg h-full">
           {/* Icon Section */}
           <div
-            className="text-muted-foreground flex border-none bg-muted items-center justify-center pl-4 rounded-l-lg border-r-0"
+            className="text-muted-foreground flex border-none bg-muted items-center justify-center pl-3 sm:pl-4 rounded-l-lg border-r-0"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              width="24px"
-              height="24px"
+              width="20px"
+              height="20px"
+              className="sm:w-6 sm:h-6"
               fill="currentColor"
               viewBox="0 0 256 256"
             >
@@ -44,7 +45,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-foreground focus:outline-0 focus:ring-0 border-none bg-muted h-full placeholder:text-muted-foreground px-4 rounded-l-none border-l-0 pl-2 text-base font-normal leading-normal"
+            className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-foreground focus:outline-0 focus:ring-0 border-none bg-muted h-full placeholder:text-muted-foreground px-3 sm:px-4 rounded-l-none border-l-0 pl-2 text-sm sm:text-base font-normal leading-normal"
           />
         </div>
       </label>

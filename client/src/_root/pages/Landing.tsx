@@ -22,35 +22,35 @@ function landing() {
 
   return (
     <>
-        <div className="px-40 flex flex-1 justify-center py-5">
+        <div className="px-4 md:px-10 lg:px-40 flex flex-1 justify-center py-5">
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
             <div className="@container">
               <div className="@[480px]:p-4">
                 <div
-                  className="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-lg items-center justify-center p-4"
+                  className="flex min-h-[320px] sm:min-h-[400px] md:min-h-[480px] flex-col gap-4 sm:gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 @[480px]:rounded-lg items-center justify-center p-6 sm:p-8"
                   style={{ backgroundImage: 'linear-gradient(rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.4) 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBmLWitLro9Izt7Zp-y_b1tOIy2IEtjXBcugGxGza7i4Kxq77lnfWl1KS6PdpT097eBIlIOygS2wB5Ws2shj4YF36_wBW7maoTNl9zKkiUP0amPX3_u7z1k3HI5-cQEG1aVSgHmI6jYlNwNAh-hFHIowjTtE8Le2QjMFoDaaelIrydnfCNjuc6KDa1-9fT37DtkcizV510GSrfkioUo-MkkhMki_18NKifV8o56ytK_pKLhAOBHIjsTOcrnUib30_RCr_pV5W0FFNk")' }}
                 >
-                  <div className="flex flex-col gap-2 text-center">
+                  <div className="flex flex-col gap-2 text-center px-4">
                     <h1
-                      className="text-white text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]"
+                      className="text-white text-2xl sm:text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-5xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]"
                     >
                       Human-Centered Crowdsourcing for AI-Assisted Knowledge Graphs
                     </h1>
-                    <h2 className="text-white text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
+                    <h2 className="text-white text-xs sm:text-sm font-normal leading-normal @[480px]:text-base @[480px]:font-normal @[480px]:leading-normal">
                       CrowdGraph is a collaborative web platform that combines crowdsourcing and AI to help communities build structured knowledge graphs.
                     </h2>
                   </div>
-                  <div className="flex-wrap gap-3 flex justify-center">
+                  <div className="flex-wrap gap-3 flex justify-center px-4">
                     <Link to='/explore'>
                       <button
-                        className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]"
+                        className="flex min-w-[84px] w-full sm:w-auto max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]"
                       >
                         <span className="truncate">Explore Communities</span>
                       </button>
                     </Link>
                     <Link to='/signup'>
                       <button
-                        className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-muted text-foreground text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]"
+                        className="flex min-w-[84px] w-full sm:w-auto max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-muted text-foreground text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]"
                       >
                         <span className="truncate">Start Contributing</span>
                       </button>
@@ -59,38 +59,38 @@ function landing() {
                 </div>
               </div>
             </div>
-            <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Featured Communities</h2>
+            <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Featured Communities</h2>
             
             <CommunityGrid communities={communitiesToShow.slice(0, 5)} />
             
-            <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Hybrid AI + Human Validation Model</h2>
-            <p className="text-foreground text-base font-normal leading-normal pb-3 pt-1 px-4">
+            <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Hybrid AI + Human Validation Model</h2>
+            <p className="text-foreground text-sm sm:text-base font-normal leading-normal pb-3 pt-1 px-4">
               Our platform combines the power of AI with human expertise to ensure the accuracy and reliability of knowledge graphs. AI algorithms suggest potential relationships,
               while community members validate and refine these suggestions, creating a robust and trustworthy knowledge base.
             </p>
-            <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Testimonials &amp; Stats</h2>
+            <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">Testimonials &amp; Stats</h2>
             <div className="flex flex-wrap gap-4 p-4">
-              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 border border-border">
-                <p className="text-foreground text-base font-medium leading-normal">Active Communities</p>
-                <p className="text-foreground tracking-light text-2xl font-bold leading-tight">10+</p>
+              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-4 sm:p-6 border border-border">
+                <p className="text-foreground text-sm sm:text-base font-medium leading-normal">Active Communities</p>
+                <p className="text-foreground tracking-light text-xl sm:text-2xl font-bold leading-tight">10+</p>
               </div>
-              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-6 border border-border">
-                <p className="text-foreground text-base font-medium leading-normal">Validated Relations</p>
-                <p className="text-foreground tracking-light text-2xl font-bold leading-tight">Thousands</p>
+              <div className="flex min-w-[158px] flex-1 flex-col gap-2 rounded-lg p-4 sm:p-6 border border-border">
+                <p className="text-foreground text-sm sm:text-base font-medium leading-normal">Validated Relations</p>
+                <p className="text-foreground tracking-light text-xl sm:text-2xl font-bold leading-tight">Thousands</p>
               </div>
             </div>
             <div className="flex flex-col gap-10 px-4 py-10 @container">
               <div className="flex flex-col gap-4">
                 <h1
-                  className="text-foreground tracking-light text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]"
+                  className="text-foreground tracking-light text-2xl sm:text-[28px] md:text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]"
                 >
                   Features
                 </h1>
-                <p className="text-foreground text-base font-normal leading-normal max-w-[720px]">
+                <p className="text-foreground text-sm sm:text-base font-normal leading-normal max-w-[720px]">
                   CrowdGraph offers a range of features to support collaborative knowledge graph construction.
                 </p>
               </div>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[repeat(auto-fit,minmax(158px,1fr))] gap-3 p-0">
                 <div className="flex flex-1 gap-3 rounded-lg border border-border bg-muted p-4 flex-col">
                   <div className="text-foreground" data-icon="Users" data-size="24px" data-weight="regular">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" fill="currentColor" viewBox="0 0 256 256">
@@ -136,17 +136,17 @@ function landing() {
               <div className="flex flex-col justify-end gap-6 px-4 py-10 @[480px]:gap-8 @[480px]:px-10 @[480px]:py-20">
                 <div className="flex flex-col gap-2 text-center items-center">
                   <h1
-                    className="text-foreground tracking-light text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]"
+                    className="text-foreground tracking-light text-2xl sm:text-[28px] md:text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px]"
                   >
                     Join the CrowdGraph Community
                   </h1>
-                  <p className="text-foreground text-base font-normal leading-normal max-w-[720px]">Start building knowledge graphs that matter.</p>
+                  <p className="text-foreground text-sm sm:text-base font-normal leading-normal max-w-[720px]">Start building knowledge graphs that matter.</p>
                 </div>
                 <div className="flex flex-1 justify-center">
-                  <div className="flex justify-center">
-                    <Link to='/signup'>
+                  <div className="flex justify-center w-full sm:w-auto">
+                    <Link to='/signup' className="w-full sm:w-auto">
                       <button
-                        className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] grow"
+                        className="flex min-w-[84px] w-full sm:w-auto max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em] grow"
                       >
                         <span className="truncate">Get Started</span>
                       </button>
@@ -160,7 +160,7 @@ function landing() {
         <footer className="flex justify-center">
           <div className="flex max-w-[960px] flex-1 flex-col">
             <footer className="flex flex-col gap-6 px-5 py-10 text-center @container">
-              <p className="text-muted-foreground text-base font-normal leading-normal">@2024 CrowdGraph. All rights reserved.</p>
+              <p className="text-muted-foreground text-sm sm:text-base font-normal leading-normal">@2024 CrowdGraph. All rights reserved.</p>
             </footer>
           </div>
         </footer>

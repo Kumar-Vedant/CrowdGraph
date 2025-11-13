@@ -1,17 +1,25 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo, useState } from "react";
 import ForceGraph2D from "react-force-graph-2d";
 import { dummyNodes, dummyEdges } from "../../services/data";
+import { useTheme } from "@/context/ThemeContext";
 
-const KnowledgeGraph: React.FC = () => {
+const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
   const fgRef = useRef<any>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const infoRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
+  const [isZoomedIn, setIsZoomedIn] = useState(false);
+  const { theme } = useTheme();
 
-  const NODE_COLOR = "#00b0c8";
-  const NODE_SIZE = 2;
-  const LINK_COLOR = "rgba(255,255,255,0.25)";
-  const LINK_WIDTH = 1;
-  const LINK_DISTANCE = 50;
+  // Get theme-based colors
+  const NODE_COLOR = theme.colors.primary;
+  const NODE_SIZE = 10;
+  const LINK_COLOR = theme.colors.border;
+  const LINK_WIDTH = 2;
+  const LINK_DISTANCE = 150;
+  const TEXT_COLOR = theme.colors.text;
+  const BACKGROUND_COLOR = theme.colors.background;
 
   // Build data
   const graphData = useMemo(
@@ -33,10 +41,26 @@ const KnowledgeGraph: React.FC = () => {
         width: LINK_WIDTH,
       })),
     }),
-    []
+    [NODE_COLOR, LINK_COLOR]
   );
 
-  // Initialize forces
+  // Track container dimensions
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setDimensions({ width, height });
+      }
+    });
+
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  // Initialize forces and center graph
   useEffect(() => {
     const timer = setTimeout(() => {
       if (fgRef.current) {
@@ -46,7 +70,7 @@ const KnowledgeGraph: React.FC = () => {
       }
     }, 600);
     return () => clearTimeout(timer);
-  }, []);
+  }, [dimensions]);
 
   // Tooltip follows mouse
   useEffect(() => {
@@ -66,17 +90,17 @@ const KnowledgeGraph: React.FC = () => {
     if (!info) return;
 
     const html = `
-      <div style="font-weight:600;font-size:1rem;margin-bottom:4px;">${title}</div>
-      <div style="color:#94a3b8;font-size:0.85rem;margin-bottom:4px;">Type: ${type}</div>
-      <div style="color:#94a3b8;font-size:0.8rem;margin-bottom:6px;">ID: <span style="color:#e2e8f0;">${id}</span></div>
-      <hr style="border-color:#334155;margin:6px 0;" />
-      ${details
+      <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px;color:${theme.colors.primary};">${title}</div>
+      <div style="color:${theme.colors.textSecondary};font-size:0.85rem;margin-bottom:4px;"><span style="font-weight:600;">Type:</span> ${type}</div>
+      <div style="color:${theme.colors.textSecondary};font-size:0.8rem;margin-bottom:8px;"><span style="font-weight:600;">ID:</span> <span style="color:${theme.colors.text};font-family:monospace;">${id}</span></div>
+      <hr style="border:none;border-top:1px solid ${theme.colors.border};margin:8px 0;" />
+      ${details && details.length > 0 ? details
         .map(
           (p) =>
-            `<div style="margin-bottom:4px;"><strong>${p.key}:</strong> <span style="color:#cbd5e1;">${p.value}</span></div>`
+            `<div style="margin-bottom:6px;padding:4px 0;"><strong style="color:${theme.colors.text};">${p.key}:</strong> <span style="color:${theme.colors.textSecondary};margin-left:4px;">${p.value}</span></div>`
         )
-        .join("")}
-      <button id="closeInfoBtn" style="margin-top:8px;background:#1e293b;border:none;color:#e2e8f0;border-radius:6px;padding:6px 10px;cursor:pointer;width:100%;">Close</button>
+        .join("") : `<div style="color:${theme.colors.textSecondary};font-style:italic;margin:8px 0;">No properties</div>`}
+      <button id="closeInfoBtn" style="margin-top:12px;background:${theme.colors.primary};border:none;color:${theme.colors.background};border-radius:8px;padding:8px 12px;cursor:pointer;width:100%;font-weight:600;font-size:0.875rem;transition:all 0.2s;">Close</button>
     `;
 
     info.innerHTML = html;
@@ -86,6 +110,12 @@ const KnowledgeGraph: React.FC = () => {
     // Close button handler
     const closeBtn = document.getElementById("closeInfoBtn");
     if (closeBtn) {
+      closeBtn.onmouseover = () => {
+        closeBtn.style.background = theme.colors.primaryLight || theme.colors.primary;
+      };
+      closeBtn.onmouseout = () => {
+        closeBtn.style.background = theme.colors.primary;
+      };
       closeBtn.onclick = () => {
         info.style.opacity = "0";
         info.style.pointerEvents = "none";
@@ -99,11 +129,13 @@ const KnowledgeGraph: React.FC = () => {
       <ForceGraph2D
         ref={fgRef}
         graphData={graphData}
-        backgroundColor="#020c0f"
+        width={dimensions.width}
+        height={dimensions.height}
+        backgroundColor={BACKGROUND_COLOR}
         linkColor={() => LINK_COLOR}
         linkWidth={() => LINK_WIDTH}
         nodeRelSize={NODE_SIZE}
-        enableNodeDrag={true} // ✅ Nodes now movable
+        enableNodeDrag={true}
         cooldownTicks={0}
         nodeLabel={() => ""}
         onNodeHover={(node) => {
@@ -129,30 +161,71 @@ const KnowledgeGraph: React.FC = () => {
         nodeCanvasObject={(node: any, ctx, globalScale) => {
           if (!node || typeof node.x !== "number" || typeof node.y !== "number")
             return;
-          const radius = NODE_SIZE;
+          const radius = NODE_SIZE / globalScale;
           ctx.beginPath();
           ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
           ctx.fillStyle = NODE_COLOR;
           ctx.fill();
 
-          const fontSize = 10 / globalScale;
-          ctx.font = `${fontSize}px Sans-Serif`;
+          const fontSize = 11 / globalScale;
+          ctx.font = `bold ${fontSize}px Sans-Serif`;
           ctx.textAlign = "left";
           ctx.textBaseline = "middle";
-          ctx.fillStyle = "#E2E8F0";
-          ctx.fillText(node.label, node.x + radius + 4, node.y);
+          ctx.fillStyle = TEXT_COLOR;
+          ctx.fillText(node.label, node.x + radius + 0.5, node.y + radius + 0.5);
+        }}
+        linkCanvasObject={(link: any, ctx, globalScale) => {
+          if (!link.source || !link.target) return;
+          const { x: x1, y: y1 } = link.source;
+          const { x: x2, y: y2 } = link.target;
+          
+          ctx.strokeStyle = LINK_COLOR;
+          ctx.lineWidth = LINK_WIDTH / globalScale;
+          ctx.beginPath();
+          ctx.moveTo(x1, y1);
+          ctx.lineTo(x2, y2);
+          ctx.stroke();
+
+          // Draw edge label in the middle of the line
+          const midX = (x1 + x2) / 2;
+          const midY = (y1 + y2) / 2;
+          const fontSize = 9 / globalScale;
+          ctx.font = `${fontSize}px Sans-Serif`;
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillStyle = TEXT_COLOR;
+          ctx.fillText(link.label, midX, midY);
         }}
       />
     ),
-    [graphData]
+    [graphData, dimensions, NODE_COLOR, LINK_COLOR, TEXT_COLOR]
   );
+
+  // Center and zoom toggle
+  const handleCenterGraph = () => {
+    if (!fgRef.current) return;
+    
+    if (isZoomedIn) {
+      // Zoom out - fit entire graph
+      fgRef.current.zoomToFit(400, 50);
+      setIsZoomedIn(false);
+    } else {
+      // Zoom in to center
+      const width = dimensions.width;
+      const height = dimensions.height;
+      fgRef.current.centerAt(0, 0, 300);
+      fgRef.current.zoom(16, 300);
+      setIsZoomedIn(true);
+    }
+  };
 
   return (
     <div
+      ref={containerRef}
       style={{
         width: "100%",
         height: "100%",
-        backgroundColor: "#020c0f",
+        backgroundColor: BACKGROUND_COLOR,
         position: "relative",
         borderRadius: "8px",
         overflow: "hidden",
@@ -165,14 +238,19 @@ const KnowledgeGraph: React.FC = () => {
           position: "fixed",
           opacity: 0,
           pointerEvents: "none",
-          background: "rgba(15,23,42,0.9)",
-          color: "#E2E8F0",
-          padding: "6px 10px",
-          borderRadius: "6px",
-          fontSize: "0.8rem",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.3)",
-          transition: "opacity 0.1s ease",
+          background: `${theme.colors.primary}dd`,
+          color: "#fff",
+          padding: "8px 12px",
+          borderRadius: "8px",
+          fontSize: "0.875rem",
+          fontWeight: "600",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+          transition: "opacity 0.15s ease",
           zIndex: 100,
+          maxWidth: "200px",
+          whiteSpace: "nowrap",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
         }}
       />
 
@@ -181,20 +259,105 @@ const KnowledgeGraph: React.FC = () => {
         ref={infoRef}
         style={{
           position: "absolute",
-          top: 12,
-          right: 12,
-          background: "rgba(30,41,59,0.95)",
-          color: "#E2E8F0",
-          padding: "14px",
-          borderRadius: "10px",
-          minWidth: "220px",
-          boxShadow: "0 4px 14px rgba(0,0,0,0.3)",
-          transition: "opacity 0.2s ease",
+          top: 16,
+          right: 16,
+          background: `${theme.colors.cardBg}f0`,
+          backdropFilter: "blur(10px)",
+          color: theme.colors.text,
+          padding: "16px",
+          borderRadius: "12px",
+          minWidth: "240px",
+          maxWidth: "320px",
+          border: `1px solid ${theme.colors.border}`,
+          boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
+          transition: "opacity 0.25s ease",
           opacity: 0,
           pointerEvents: "none",
           zIndex: 50,
         }}
       />
+
+      {/* Center Button */}
+      <button
+        onClick={handleCenterGraph}
+        style={{
+          position: "absolute",
+          bottom: 20,
+          left: 20,
+          background: theme.colors.primary,
+          color: theme.colors.background,
+          border: "none",
+          borderRadius: "50%",
+          width: "48px",
+          height: "48px",
+          cursor: "pointer",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "1.2rem",
+          fontWeight: "bold",
+          transition: "all 0.2s ease",
+          zIndex: 50,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.background = theme.colors.primaryLight || theme.colors.primary;
+          e.currentTarget.style.transform = "scale(1.05)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.background = theme.colors.primary;
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+        title={isZoomedIn ? "Zoom Out" : "Zoom In at Center"}
+      >
+        {isZoomedIn ? "−" : "+"}
+      </button>
+
+      {/* Expand Button */}
+      {onExpand && (
+        <button
+          onClick={onExpand}
+          style={{
+            position: "absolute",
+            bottom: 20,
+            right: 20,
+            background: theme.colors.primary,
+            color: theme.colors.background,
+            border: "none",
+            borderRadius: "50%",
+            width: "48px",
+            height: "48px",
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: "1.2rem",
+            fontWeight: "bold",
+            transition: "all 0.2s ease",
+            zIndex: 50,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = theme.colors.primaryLight || theme.colors.primary;
+            e.currentTarget.style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = theme.colors.primary;
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+          title="Expand Knowledge Graph"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24px"
+            height="24px"
+            fill="currentColor"
+            viewBox="0 0 256 256"
+          >
+            <path d="M224,48V96a8,8,0,0,1-16,0V67.31l-42.34,42.35a8,8,0,0,1-11.32-11.32L196.69,56H168a8,8,0,0,1,0-16h48A8,8,0,0,1,224,48ZM98.34,145.66,56,188v-28a8,8,0,0,0-16,0v48a8,8,0,0,0,8,8H96a8,8,0,0,0,0-16H68L109.66,157.66a8,8,0,0,0-11.32-11.32Z"></path>
+          </svg>
+        </button>
+      )}
 
       {graph}
     </div>

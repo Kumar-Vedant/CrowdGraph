@@ -15,6 +15,7 @@ import {
 function Navbar() {
   const { user } = useAuth();
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: usersData, loading: usersLoading, callApi: fetchAllUsers } = useApi(getAllUsers);
 
   useEffect(() => {
@@ -28,9 +29,9 @@ function Navbar() {
     : [];
 
   return (
-    <nav className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 px-6 md:px-10 py-4 shadow-sm">
-      <Link to="/" className="flex items-center gap-3 text-foreground hover:opacity-80 transition-opacity">
-        <div className="size-8 flex items-center justify-center bg-linear-to-br from-primary to-accent rounded-lg p-1.5 shadow-md">
+    <nav className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 px-4 md:px-10 py-3 md:py-4 shadow-sm">
+      <Link to="/" className="flex items-center gap-2 md:gap-3 text-foreground hover:opacity-80 transition-opacity">
+        <div className="size-7 md:size-8 flex items-center justify-center bg-linear-to-br from-primary to-accent rounded-lg p-1.5 shadow-md">
           <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-white">
             <path
               d="M13.8261 30.5736C16.7203 29.8826 20.2244 29.4783 24 29.4783C27.7756 29.4783 31.2797 29.8826 34.1739 30.5736C36.9144 31.2278 39.9967 32.7669 41.3563 33.8352L24.8486 7.36089C24.4571 6.73303 23.5429 6.73303 23.1514 7.36089L6.64374 33.8352C8.00331 32.7669 11.0856 31.2278 13.8261 30.5736Z"
@@ -38,10 +39,11 @@ function Navbar() {
             ></path>
           </svg>
         </div>
-        <h2 className="text-foreground text-xl font-bold tracking-tight">CrowdGraph</h2>
+        <h2 className="text-foreground text-lg md:text-xl font-bold tracking-tight">CrowdGraph</h2>
       </Link>
       
-      <div className="flex flex-1 justify-end items-center gap-6 md:gap-8">
+      <div className="flex flex-1 justify-end items-center gap-3 md:gap-8">
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-6 lg:gap-8">
           <Link 
             className="text-foreground/80 hover:text-foreground text-sm font-medium transition-colors relative group" 
@@ -76,9 +78,11 @@ function Navbar() {
                 ) : sortedUsers.length > 0 ? (
                   <div className="space-y-2 mt-4">
                     {sortedUsers.map((u: User, index: number) => (
-                      <div 
-                        key={u.id} 
-                        className={`flex items-center gap-4 p-4 rounded-lg transition-all hover:shadow-md ${
+                      <Link
+                        key={u.id}
+                        to={`/user/${u.id}`}
+                        onClick={() => setIsLeaderboardOpen(false)}
+                        className={`flex items-center gap-4 p-4 rounded-lg transition-all hover:shadow-md cursor-pointer ${
                           index === 0 ? 'bg-warning/10 border-2 border-warning/30' :
                           index === 1 ? 'bg-muted/50 border-2 border-border' :
                           index === 2 ? 'bg-accent/10 border-2 border-accent/30' :
@@ -114,7 +118,7 @@ function Navbar() {
                           </svg>
                           <span className="text-primary font-bold text-sm">{u.reputation || 0}</span>
                         </div>
-                      </div>
+                      </Link>
                     ))}
                   </div>
                 ) : (
@@ -136,7 +140,8 @@ function Navbar() {
           </Link>
         </div>
         
-        <div className="flex items-center gap-3">
+        {/* Desktop Auth Buttons */}
+        <div className="hidden md:flex items-center gap-3">
           {user ? (
             <Link to={`/profile`} className="group">
               <div className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -161,7 +166,86 @@ function Navbar() {
             </>
           )}
         </div>
+
+        {/* Mobile Hamburger Menu */}
+        <button 
+          className="md:hidden flex items-center justify-center w-10 h-10 text-foreground hover:bg-muted rounded-lg transition-colors"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle menu"
+        >
+          {isMobileMenuOpen ? (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
       </div>
+
+      {/* Mobile Menu Dropdown */}
+      {isMobileMenuOpen && (
+        <div className="absolute top-full left-0 right-0 bg-background/98 backdrop-blur-md border-b border-border shadow-lg md:hidden">
+          <div className="flex flex-col p-4 space-y-3">
+            <Link 
+              to="/explore"
+              className="text-foreground/80 hover:text-foreground text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Explore
+            </Link>
+            
+            <button 
+              onClick={() => {
+                setIsMobileMenuOpen(false);
+                setIsLeaderboardOpen(true);
+              }}
+              className="text-foreground/80 hover:text-foreground text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-all text-left"
+            >
+              Leaderboard
+            </button>
+            
+            <Link 
+              to="https://github.com/Kumar-Vedant/CrowdGraph"
+              target="_blank"
+              className="text-foreground/80 hover:text-foreground text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-all"
+              onClick={() => setIsMobileMenuOpen(false)}
+            >
+              Contribute
+            </Link>
+
+            <div className="border-t border-border pt-3 mt-2 space-y-2">
+              {user ? (
+                <Link 
+                  to={`/profile`}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-3 py-2 px-3 rounded-lg hover:bg-muted transition-all"
+                >
+                  <div className="w-10 h-10 rounded-full bg-linear-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-sm shadow-md">
+                    {user.username?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                  <span className="text-base font-medium text-foreground">{user.username}</span>
+                </Link>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Link to="/signup" onClick={() => setIsMobileMenuOpen(false)}>
+                    <button className="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-primary text-white text-base font-semibold hover:bg-primary/90 transition-all shadow-sm">
+                      Sign Up
+                    </button>
+                  </Link>
+                  <Link to="/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    <button className="w-full flex items-center justify-center rounded-lg h-10 px-4 bg-muted text-foreground text-base font-medium hover:bg-muted/80 transition-all border border-border">
+                      Log In
+                    </button>
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   )
 }

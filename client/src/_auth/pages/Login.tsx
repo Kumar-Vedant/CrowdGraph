@@ -26,19 +26,19 @@ function Login() {
 
   return (
     <div>
-      <div className="px-40 flex flex-1 justify-center py-5">
+      <div className="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-5">
         <form
           onSubmit={handleSubmit}
-          className="layout-content-container flex justify-center items-center flex-col w-[512px] py-5 max-w-[960px] flex-1"
+          className="layout-content-container flex justify-center items-center flex-col w-full sm:w-[512px] py-5 max-w-[960px] flex-1"
         >
-          <h2 className="text-foreground tracking-light text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">
+          <h2 className="text-foreground tracking-light text-xl sm:text-2xl md:text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">
             Log in to CrowdGraph
           </h2>
 
           {/* Email or Username */}
-          <div className="flex w-2/3 flex-wrap items-end gap-4 px-4 py-3">
+          <div className="flex w-full sm:w-5/6 md:w-2/3 flex-wrap items-end gap-4 px-4 py-3">
             <label className="flex flex-col min-w-40 flex-1">
-              <p className="text-foreground text-base font-medium leading-normal pb-2">
+              <p className="text-foreground text-sm sm:text-base font-medium leading-normal pb-2">
                 Email or Username
               </p>
               <input
@@ -54,9 +54,9 @@ function Login() {
           </div>
 
           {/* Password */}
-          <div className="flex w-2/3 flex-wrap items-end gap-4 px-4 py-3">
+          <div className="flex w-full sm:w-5/6 md:w-2/3 flex-wrap items-end gap-4 px-4 py-3">
             <label className="flex flex-col min-w-40 flex-1">
-              <p className="text-foreground text-base font-medium leading-normal pb-2">
+              <p className="text-foreground text-sm sm:text-base font-medium leading-normal pb-2">
                 Password
               </p>
               <input

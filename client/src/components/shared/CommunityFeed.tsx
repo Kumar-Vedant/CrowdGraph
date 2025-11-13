@@ -266,40 +266,40 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
     );
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8 px-2 sm:px-0">
       {/* Create Post */}
       {isMember ? (
-        <Card className="p-5 rounded-xl bg-card shadow-md border border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold text-foreground">
+        <Card className="p-3 sm:p-5 rounded-xl bg-card shadow-md border border-border">
+          <CardHeader className="pb-3 px-2 sm:px-4">
+            <CardTitle className="text-base sm:text-lg font-semibold text-foreground">
               Create a Post
             </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2 sm:px-4">
             <input
               type="text"
               placeholder="Title"
               value={newPostTitle}
               onChange={(e) => setNewPostTitle(e.target.value)}
-              className="w-full mb-3 p-2 border border-border rounded-md"
+              className="w-full mb-3 p-2 border border-border rounded-md text-sm sm:text-base"
             />
             <Textarea
               placeholder="Content"
               value={newPostContent}
               onChange={(e) => setNewPostContent(e.target.value)}
-              className="w-full min-h-[100px]"
+              className="w-full min-h-[100px] text-sm sm:text-base"
             />
-            <Button onClick={handleCreatePost} disabled={posting} className="mt-2">
+            <Button onClick={handleCreatePost} disabled={posting} className="mt-2 text-sm sm:text-base">
               {posting ? "Posting..." : "Post"}
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <Card className="p-5 rounded-xl bg-muted shadow-md border-2 border-dashed border-border">
-          <CardContent className="text-center py-8">
+        <Card className="p-3 sm:p-5 rounded-xl bg-muted shadow-md border-2 border-dashed border-border">
+          <CardContent className="text-center py-6 sm:py-8 px-2">
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="h-12 w-12 mx-auto text-muted-foreground/60 mb-3"
+              className="h-10 w-10 sm:h-12 sm:w-12 mx-auto text-muted-foreground/60 mb-3"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -311,8 +311,8 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                 d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
               />
             </svg>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Members Only</h3>
-            <p className="text-muted-foreground mb-4">
+            <h3 className="text-base sm:text-lg font-semibold text-foreground mb-2">Members Only</h3>
+            <p className="text-xs sm:text-sm text-muted-foreground mb-4 px-4">
               Join this community to create posts and participate in discussions.
             </p>
           </CardContent>
@@ -329,34 +329,34 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
 
       {/* Posts */}
       {posts.length === 0 ? (
-        <div className="text-center text-muted-foreground py-10">No posts yet</div>
+        <div className="text-center text-muted-foreground py-10 text-sm sm:text-base">No posts yet</div>
       ) : (
         posts.map((post) => (
           <Card
             key={post.id}
-            className="p-5 rounded-xl bg-card shadow-md border border-border"
+            className="p-3 sm:p-5 rounded-xl bg-card shadow-md border border-border"
           >
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold text-foreground">
+            <CardHeader className="pb-3 px-2 sm:px-4">
+              <CardTitle className="text-base sm:text-lg font-semibold text-foreground">
                 {post.title}
               </CardTitle>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs sm:text-sm text-muted-foreground">
                 Posted by <span className="font-medium">{post.authorName || "Unknown"}</span> •{" "}
                 {new Date(post.createdAt).toLocaleString()}
               </p>
             </CardHeader>
 
-            <CardContent>
-              <p className="text-foreground mb-4">{post.content}</p>
+            <CardContent className="px-2 sm:px-4">
+              <p className="text-foreground mb-4 text-sm sm:text-base">{post.content}</p>
 
               <Button
                 variant="ghost"
                 size="sm"
-                className="flex items-center space-x-2 text-muted-foreground"
+                className="flex items-center space-x-1 sm:space-x-2 text-muted-foreground text-xs sm:text-sm"
                 onClick={() => toggleComments(post.id)}
               >
-                {expandedComments[post.id] ? <ChevronDown /> : <ChevronRight />}
-                <MessageSquare size={16} />
+                {expandedComments[post.id] ? <ChevronDown size={14} className="sm:w-4 sm:h-4" /> : <ChevronRight size={14} className="sm:w-4 sm:h-4" />}
+                <MessageSquare size={14} className="sm:w-4 sm:h-4" />
                 <span>Comments</span>
               </Button>
 
@@ -365,7 +365,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                   {comments[post.id]?.length ? (
                     comments[post.id].map((c) => renderCommentTree(c))
                   ) : (
-                    <p className="text-sm text-muted-foreground">No comments yet.</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">No comments yet.</p>
                   )}
 
                   {isMember ? (
@@ -379,15 +379,15 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                             [post.id]: e.target.value,
                           }))
                         }
-                        className="min-h-[70px]"
+                        className="min-h-[70px] text-sm sm:text-base"
                       />
-                      <Button className="mt-2" onClick={() => handleAddComment(post.id)}>
+                      <Button className="mt-2 text-xs sm:text-sm" onClick={() => handleAddComment(post.id)}>
                         Comment
                       </Button>
                     </div>
                   ) : (
-                    <div className="mt-4 p-4 bg-muted border border-border rounded-lg text-center">
-                      <p className="text-sm text-muted-foreground">
+                    <div className="mt-4 p-3 sm:p-4 bg-muted border border-border rounded-lg text-center">
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         <span className="font-semibold">Join this community</span> to comment on posts.
                       </p>
                     </div>

@@ -35,14 +35,14 @@ function Explore() {
   }, [searchResults, searchQuery]);
 
   return (
-    <div className="px-40 flex flex-1 justify-center py-5">
+    <div className="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-5">
       <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
         <div className="flex flex-wrap justify-between gap-3 p-4">
           <div className="flex min-w-72 flex-col gap-3">
-            <p className="text-foreground tracking-light text-[32px] font-bold leading-tight">
+            <p className="text-foreground tracking-light text-2xl sm:text-[28px] md:text-[32px] font-bold leading-tight">
               Explore Communities
             </p>
-            <p className="text-muted-foreground text-sm font-normal leading-normal">
+            <p className="text-muted-foreground text-xs sm:text-sm font-normal leading-normal">
               Discover and join communities that align with your interests and expertise.
             </p>
           </div>

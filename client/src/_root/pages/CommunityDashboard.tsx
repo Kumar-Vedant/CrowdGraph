@@ -1,4 +1,4 @@
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import SearchBar from "../../components/shared/SearchBar";
 import { CommunityFeed } from "@/components/shared/CommunityFeed";
 import {
@@ -12,7 +12,14 @@ import {
 import { useApi } from "@/hooks/apiHook";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
-import type { User, Node, Edge, NodeProposal, EdgeProposal, GraphProposals } from "@/schema";
+import type {
+  User,
+  Node,
+  Edge,
+  NodeProposal,
+  EdgeProposal,
+  GraphProposals,
+} from "@/schema";
 import {
   Dialog,
   DialogContent,
@@ -25,10 +32,255 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import KnowledgeGraph from "@/components/shared/KnowledgeGraph";
 
+// Community Feed Component
+function CommunityFeedSection({
+  communityId,
+  isMember,
+}: {
+  communityId: string;
+  isMember: boolean;
+}) {
+  return (
+    <div className="flex-1 min-w-0">
+      <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+        Community Feed
+      </h2>
+      <CommunityFeed communityId={communityId} isMember={isMember} />
+    </div>
+  );
+}
+
+// Contribution Queue Component
+function ContributionQueueSection({
+  proposalsData,
+  proposalsLoading,
+}: {
+  proposalsData: GraphProposals | null;
+  proposalsLoading: boolean;
+}) {
+  return (
+    <div className="w-full lg:w-[360px] lg:min-w-[360px]">
+      <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
+        Contribution Queue
+      </h2>
+
+      {proposalsLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      ) : proposalsData &&
+        (proposalsData.nodeProposals?.length > 0 ||
+          proposalsData.edgeProposals?.length > 0) ? (
+        <div className="flex flex-col gap-3 px-4 pb-4">
+          {/* Node Proposals */}
+          {proposalsData.nodeProposals
+            ?.filter((p: NodeProposal) => p.status === "PENDING")
+            .map((proposal: NodeProposal) => (
+              <div
+                key={proposal.id}
+                className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24px"
+                    height="24px"
+                    fill="currentColor"
+                    className="text-primary"
+                    viewBox="0 0 256 256"
+                  >
+                    <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm40-68a28,28,0,0,1-28,28h-4v8a8,8,0,0,1-16,0v-8H104a8,8,0,0,1,0-16h36a12,12,0,0,0,0-24H116a28,28,0,0,1,0-56h4V72a8,8,0,0,1,16,0v8h16a8,8,0,0,1,0,16H116a12,12,0,0,0,0,24h24A28,28,0,0,1,168,148Z"></path>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-foreground text-sm font-semibold truncate">
+                      {proposal.name || "New Node"}
+                    </p>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/20 text-warning-foreground shrink-0">
+                      Node
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {proposal.labels.map((label: string, idx: number) => (
+                      <span
+                        key={idx}
+                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary"
+                      >
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-muted-foreground text-xs mb-2">
+                    By {proposal.userName || "Unknown"} •{" "}
+                    {new Date(proposal.createdAt).toLocaleDateString()}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 text-xs">
+                      <svg
+                        className="w-4 h-4 text-success"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-success font-medium">
+                        {proposal.upvotes}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs">
+                      <svg
+                        className="w-4 h-4 text-destructive"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-destructive font-medium">
+                        {proposal.downvotes}
+                      </span>
+                    </div>
+                    <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                      Review →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+          {/* Edge Proposals */}
+          {proposalsData.edgeProposals
+            ?.filter((p: EdgeProposal) => p.status === "PENDING")
+            .map((proposal: EdgeProposal) => (
+              <div
+                key={proposal.id}
+                className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-center rounded-lg bg-accent/10 shrink-0 size-12">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24px"
+                    height="24px"
+                    fill="currentColor"
+                    className="text-accent"
+                    viewBox="0 0 256 256"
+                  >
+                    <path d="M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,10A56,56,0,0,1,48.38,128.4L72.5,104.28A56,56,0,0,1,149.31,102a8,8,0,1,1-10.64,12,40,40,0,0,0-54.85,1.63L59.7,139.72a40,40,0,0,0,56.58,56.58l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.22,0l-9.94,9.95a8,8,0,0,0,11.32,11.31l9.94-9.94a40,40,0,0,1,56.58,56.58L172.18,140.4A40,40,0,0,1,117.33,142,8,8,0,1,0,106.69,154a56,56,0,0,0,76.81-2.26l24.12-24.12A56.08,56.08,0,0,0,207.62,48.38Z"></path>
+                  </svg>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-foreground text-sm font-semibold truncate">
+                      {proposal.type}
+                    </p>
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent shrink-0">
+                      Edge
+                    </span>
+                  </div>
+                  {proposal.properties &&
+                    proposal.properties.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-2">
+                        {proposal.properties.map(
+                          (
+                            prop: { key: string; value: any },
+                            idx: number
+                          ) => (
+                            <span
+                              key={idx}
+                              className="text-xs text-muted-foreground"
+                            >
+                              {prop.key}: {String(prop.value)}
+                            </span>
+                          )
+                        )}
+                      </div>
+                    )}
+                  <p className="text-muted-foreground text-xs mb-2">
+                    By {proposal.userName || "Unknown"} •{" "}
+                    {new Date(proposal.createdAt).toLocaleDateString()}
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 text-xs">
+                      <svg
+                        className="w-4 h-4 text-success"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-success font-medium">
+                        {proposal.upvotes}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-xs">
+                      <svg
+                        className="w-4 h-4 text-destructive"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                      >
+                        <path
+                          fillRule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clipRule="evenodd"
+                        />
+                      </svg>
+                      <span className="text-destructive font-medium">
+                        {proposal.downvotes}
+                      </span>
+                    </div>
+                    <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+                      Review →
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-12 px-4">
+          <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
+            <svg
+              className="w-8 h-8 text-muted-foreground"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
+            </svg>
+          </div>
+          <p className="text-muted-foreground text-sm text-center">
+            No pending proposals
+          </p>
+          <p className="text-muted-foreground text-xs text-center mt-1">
+            Contributions will appear here for review
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CommunityDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
   useEffect(() => {
     if (!user) navigate("/login");
   }, [user, navigate]);
@@ -40,15 +292,15 @@ function CommunityDashboard() {
     error: communityError,
     callApi: callCommunityApi,
   } = useApi(searchCommunityById);
-  const { 
-    data: communityMembers, 
+  const {
+    data: communityMembers,
     loading: membersLoading,
-    callApi: callMembersApi 
+    callApi: callMembersApi,
   } = useApi(getUsersInCommunity);
-  const { 
-    data: ownerData, 
+  const {
+    data: ownerData,
     loading: ownerLoading,
-    callApi: callOwnerApi 
+    callApi: callOwnerApi,
   } = useApi(getUserById);
   const { loading: joinLoading, callApi: callJoinApi } = useApi(joinCommunity);
   const { loading: leaveLoading, callApi: callLeaveApi } =
@@ -67,7 +319,8 @@ function CommunityDashboard() {
   // Check if user is a member
   useEffect(() => {
     if (communityMembers && user) {
-      const isMember = Array.isArray(communityMembers) && 
+      const isMember =
+        Array.isArray(communityMembers) &&
         communityMembers.some((member: User) => member.id === user.id);
       setIsMemberOfCommunity(isMember);
     }
@@ -160,7 +413,7 @@ function CommunityDashboard() {
       alert("Node name is required!");
       return;
     }
-    
+
     // Ensure no property has a key but no value
     for (const prop of nodeProperties) {
       if (prop.key.trim() && !prop.value.trim()) {
@@ -168,7 +421,7 @@ function CommunityDashboard() {
         return;
       }
     }
-    
+
     const formattedProps: Array<{ key: string; value: any }> = nodeProperties
       .filter((p) => p.key.trim() && p.value.trim())
       .map((p) => ({ key: p.key.trim(), value: p.value }));
@@ -235,7 +488,6 @@ function CommunityDashboard() {
     }
   }, [communityData?.ownerId, communityId]);
 
-
   // --- Loading states ---
   if (communityLoading)
     return (
@@ -248,9 +500,14 @@ function CommunityDashboard() {
     return (
       <div className="flex items-center justify-center h-full p-40">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-foreground mb-2">Community not found</h2>
-          <p className="text-muted-foreground mb-4">{communityError || "This community doesn't exist or has been removed."}</p>
-          <button 
+          <h2 className="text-2xl font-bold text-foreground mb-2">
+            Community not found
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            {communityError ||
+              "This community doesn't exist or has been removed."}
+          </p>
+          <button
             onClick={() => navigate("/explore")}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
           >
@@ -260,272 +517,155 @@ function CommunityDashboard() {
       </div>
     );
 
-  const memberCount = Array.isArray(communityMembers) ? communityMembers.length : 0;
+  const memberCount = Array.isArray(communityMembers)
+    ? communityMembers.length
+    : 0;
 
   return (
     <div>
-      <div className="gap-1 px-6 flex flex-1 justify-center py-5">
-        <div className="layout-content-container flex flex-col max-w-[920px] flex-1">
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <div className="flex min-w-72 flex-col gap-3">
-                <p className="text-foreground tracking-light text-[32px] font-bold leading-tight">
+      <div className="gap-1 px-4 sm:px-6 md:px-8 flex flex-1 justify-center py-5">
+        <div className="layout-content-container flex flex-col lg:flex-row gap-6 max-w-[1400px] w-full">
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4">
+              <div className="flex flex-col gap-3 flex-1">
+                <p className="text-foreground tracking-light text-xl sm:text-2xl md:text-[32px] font-bold leading-tight">
                   {communityData.title}
                 </p>
-                <p className="text-muted-foreground text-sm font-normal">
-                  Owner: {ownerLoading ? "Loading..." : (ownerData?.username || "Unknown")} · Created at:{" "}
+                <p className="text-muted-foreground text-xs sm:text-sm font-normal">
+                  Owner:{" "}
+                  {ownerLoading ? "Loading..." : ownerData?.username || "Unknown"}{" "}
+                  · Created at:{" "}
                   {new Date(communityData.createdAt).toLocaleDateString()}
                 </p>
-                <p className="text-muted-foreground text-sm font-normal leading-normal gap-5">
-                  {membersLoading ? "Loading members..." : `${memberCount} member${memberCount !== 1 ? 's' : ''}`}
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="text-muted-foreground text-xs sm:text-sm font-normal">
+                    {membersLoading
+                      ? "Loading members..."
+                      : `${memberCount} member${memberCount !== 1 ? "s" : ""}`}
+                  </p>
                   {!membersLoading && memberCount > 0 && (
-                    <button 
-                      className="ml-3 px-3 py-1 bg-primary text-white text-xs font-medium rounded-full hover:bg-primary/90 transition-colors shadow-sm"
+                    <button
+                      className="px-3 py-1 bg-primary text-white text-xs font-medium rounded-full hover:bg-primary/90 transition-colors shadow-sm"
                       onClick={() => setIsMembersModalOpen(true)}
                     >
                       View Members
                     </button>
                   )}
-                </p>
-              </div>
-              {isMemberOfCommunity ? (
-                <button
-                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 bg-muted text-foreground text-sm font-medium leading-normal"
-                  onClick={handleLeaveCommunity}
-                  disabled={leaveLoading}
-                >
-                  <span className="truncate">
-                    {leaveLoading ? "Leaving..." : "Leave Community"}
-                  </span>
-                </button>
-              ) : (
-                <button
-                  className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-8 px-4 bg-muted text-foreground text-sm font-medium leading-normal"
-                  onClick={handleJoinCommunity}
-                  disabled={joinLoading}
-                >
-                  <span className="truncate">
-                    {joinLoading ? "Joining..." : "Join Community"}
-                  </span>
-                </button>
-              )}
-            </div>
-            <div className="@container flex flex-col h-[400px]">
-              <div className="flex flex-col h-full @[480px]:px-4 @[480px]:py-3">
-                <div className="flex flex-col h-full justify-between relative">
                   {isMemberOfCommunity ? (
-                    <SearchBar
-                      placeholder="Search Query"
-                      onSearch={(query) => {
-                        console.log("Searching for:", query);
-                      }}
-                    />
-                  ) : (
-                    <div className="p-4 bg-muted border-2 border-dashed border-border rounded-lg text-center">
-                      <p className="text-sm text-muted-foreground">
-                        <span className="font-semibold">Join this community</span> to search the knowledge graph.
-                      </p>
-                    </div>
-                  )}
-                  <div className="flex-1 min-h-0">
-                    <KnowledgeGraph />
-                  </div>
-                  
-                  {/* Expand Graph Button */}
-                  <button
-                    className="absolute bottom-4 right-4 flex items-center justify-center w-10 h-10 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all"
-                    onClick={() => setIsGraphModalOpen(true)}
-                    title="Expand Knowledge Graph"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="24px"
-                      height="24px"
-                      fill="currentColor"
-                      viewBox="0 0 256 256"
+                    <button
+                      className="flex w-full sm:w-auto cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-muted text-foreground text-xs sm:text-sm font-medium leading-normal hover:bg-muted/80 transition-all"
+                      onClick={handleLeaveCommunity}
+                      disabled={leaveLoading}
                     >
-                      <path d="M224,48V96a8,8,0,0,1-16,0V67.31l-42.34,42.35a8,8,0,0,1-11.32-11.32L196.69,56H168a8,8,0,0,1,0-16h48A8,8,0,0,1,224,48ZM98.34,145.66,56,188v-28a8,8,0,0,0-16,0v48a8,8,0,0,0,8,8H96a8,8,0,0,0,0-16H68L109.66,157.66a8,8,0,0,0-11.32-11.32Z"></path>
-                    </svg>
-                  </button>
+                      <span className="truncate">
+                        {leaveLoading ? "Leaving..." : "Leave Community"}
+                      </span>
+                    </button>
+                  ) : (
+                    <button
+                      className="flex w-full sm:w-auto cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-primary text-white text-xs sm:text-sm font-medium leading-normal hover:bg-primary/90 transition-all"
+                      onClick={handleJoinCommunity}
+                      disabled={joinLoading}
+                    >
+                      <span className="truncate">
+                        {joinLoading ? "Joining..." : "Join Community"}
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
-
-            {/* Community Feed to show user posts */}
-            <div>
-              <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-                Community Feed
-              </h2>
-              <CommunityFeed 
-                communityId={communityId!} 
-                isMember={isMemberOfCommunity}
-              />
+            {isMemberOfCommunity ? (
+                <SearchBar
+                  placeholder="Search Query"
+                  onSearch={(query) => {
+                    console.log("Searching for:", query);
+                  }}
+                />
+              ) : (
+                <div className="p-3 sm:p-4 bg-muted border-2 border-dashed border-border rounded-lg text-center">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    <span className="font-semibold">Join this community</span> to search the knowledge graph.
+                  </p>
+                </div>
+              )}
+              {/* Knowledge Graph Section */}
+            <div className="w-full lg:w-[400px] lg:min-w-[400px]">
+              <div className="bg-card rounded-lg shadow-sm p-4 relative">
+                <h2 className="text-foreground text-lg sm:text-xl font-bold mb-4">
+                  Knowledge Graph
+                </h2>
+                <div className="w-full h-[400px] overflow-hidden rounded-lg">
+                  <KnowledgeGraph onExpand={() => setIsGraphModalOpen(true)} />
+                </div>
+              </div>
             </div>
           </div>
-          
-          {/* contribution queue*/}
-          <div className="layout-content-container flex flex-col w-[360px]">
-            <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-              Contribution Queue
-            </h2>
-            
-            {proposalsLoading ? (
-              <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-              </div>
-            ) : proposalsData && (proposalsData.nodeProposals?.length > 0 || proposalsData.edgeProposals?.length > 0) ? (
-              <div className="flex flex-col gap-3 px-4 pb-4">
-                {/* Node Proposals */}
-                {proposalsData.nodeProposals?.filter((p: NodeProposal) => p.status === "PENDING").map((proposal: NodeProposal) => (
-                  <div key={proposal.id} className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24px"
-                        height="24px"
-                        fill="currentColor"
-                        className="text-primary"
-                        viewBox="0 0 256 256"
-                      >
-                        <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm40-68a28,28,0,0,1-28,28h-4v8a8,8,0,0,1-16,0v-8H104a8,8,0,0,1,0-16h36a12,12,0,0,0,0-24H116a28,28,0,0,1,0-56h4V72a8,8,0,0,1,16,0v8h16a8,8,0,0,1,0,16H116a12,12,0,0,0,0,24h24A28,28,0,0,1,168,148Z"></path>
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="text-foreground text-sm font-semibold truncate">
-                          {proposal.name || "New Node"}
-                        </p>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/20 text-warning-foreground shrink-0">
-                          Node
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {proposal.labels.map((label: string, idx: number) => (
-                          <span key={idx} className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
-                            {label}
-                          </span>
-                        ))}
-                      </div>
-                      <p className="text-muted-foreground text-xs mb-2">
-                        By {proposal.userName || "Unknown"} • {new Date(proposal.createdAt).toLocaleDateString()}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 text-xs">
-                          <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd"/>
-                          </svg>
-                          <span className="text-success font-medium">{proposal.upvotes}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs">
-                          <svg className="w-4 h-4 text-destructive" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
-                          </svg>
-                          <span className="text-destructive font-medium">{proposal.downvotes}</span>
-                        </div>
-                        <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
-                          Review →
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                
-                {/* Edge Proposals */}
-                {proposalsData.edgeProposals?.filter((p: EdgeProposal) => p.status === "PENDING").map((proposal: EdgeProposal) => (
-                  <div key={proposal.id} className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-center rounded-lg bg-accent/10 shrink-0 size-12">
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="24px"
-                        height="24px"
-                        fill="currentColor"
-                        className="text-accent"
-                        viewBox="0 0 256 256"
-                      >
-                        <path d="M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,10A56,56,0,0,1,48.38,128.4L72.5,104.28A56,56,0,0,1,149.31,102a8,8,0,1,1-10.64,12,40,40,0,0,0-54.85,1.63L59.7,139.72a40,40,0,0,0,56.58,56.58l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.22,0l-9.94,9.95a8,8,0,0,0,11.32,11.31l9.94-9.94a40,40,0,0,1,56.58,56.58L172.18,140.4A40,40,0,0,1,117.33,142,8,8,0,1,0,106.69,154a56,56,0,0,0,76.81-2.26l24.12-24.12A56.08,56.08,0,0,0,207.62,48.38Z"></path>
-                      </svg>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between gap-2 mb-1">
-                        <p className="text-foreground text-sm font-semibold truncate">
-                          {proposal.type}
-                        </p>
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent shrink-0">
-                          Edge
-                        </span>
-                      </div>
-                      {proposal.properties && proposal.properties.length > 0 && (
-                        <div className="flex flex-wrap gap-1 mb-2">
-                          {proposal.properties.map((prop: { key: string; value: any }, idx: number) => (
-                            <span key={idx} className="text-xs text-muted-foreground">
-                              {prop.key}: {String(prop.value)}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      <p className="text-muted-foreground text-xs mb-2">
-                        By {proposal.userName || "Unknown"} • {new Date(proposal.createdAt).toLocaleDateString()}
-                      </p>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1 text-xs">
-                          <svg className="w-4 h-4 text-success" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd"/>
-                          </svg>
-                          <span className="text-success font-medium">{proposal.upvotes}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs">
-                          <svg className="w-4 h-4 text-destructive" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd"/>
-                          </svg>
-                          <span className="text-destructive font-medium">{proposal.downvotes}</span>
-                        </div>
-                        <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
-                          Review →
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12 px-4">
-                <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
-                  <svg className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                </div>
-                <p className="text-muted-foreground text-sm text-center">
-                  No pending proposals
-                </p>
-                <p className="text-muted-foreground text-xs text-center mt-1">
-                  Contributions will appear here for review
-                </p>
-              </div>
-            )}
+
+
+          {/* Main Content - Feed and Contribution Queue */}
+          {/* Tabbed layout for small screens */}
+          <div className="lg:hidden w-full px-4">
+            <Tabs defaultValue="feed" className="w-full">
+              <TabsList className="grid w-full flex-1 grid-cols-2">
+                <TabsTrigger value="feed" className="text-xs sm:text-sm truncate">
+                  Feed
+                </TabsTrigger>
+                <TabsTrigger value="queue" className="text-xs sm:text-sm truncate">
+                  Queue
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="feed" className="mt-4">
+                <CommunityFeedSection
+                  communityId={communityId!}
+                  isMember={isMemberOfCommunity}
+                />
+              </TabsContent>
+              <TabsContent value="queue" className="mt-4">
+                <ContributionQueueSection
+                  proposalsData={proposalsData}
+                  proposalsLoading={proposalsLoading}
+                />
+              </TabsContent>
+            </Tabs>
+          </div>
+
+          {/* Side-by-side layout for large screens */}
+          <div className="hidden lg:flex flex-col lg:flex-row gap-6 w-full">
+            <CommunityFeedSection
+              communityId={communityId!}
+              isMember={isMemberOfCommunity}
+            />
+            <ContributionQueueSection
+              proposalsData={proposalsData}
+              proposalsLoading={proposalsLoading}
+            />
           </div>
         </div>
+      </div>
 
-        {/* Floating Add Button & Modal - Members Only */}
-        {isMemberOfCommunity && (
-          <div className="fixed bottom-10 right-10">
-            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  className="flex items-center justify-center w-16 h-16 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all"
-                  onClick={() => setIsModalOpen(true)}
+      {/* Floating Add Button & Modal - Members Only */}
+      {isMemberOfCommunity && (
+        <div className="fixed bottom-6 right-6 sm:bottom-10 sm:right-10 z-40">
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all hover:scale-110"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="48px"
+                  viewBox="0 -960 960 960"
+                  width="48px"
+                  fill="#fefefe"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    height="48px"
-                    viewBox="0 -960 960 960"
-                    width="48px"
-                    fill="#fefefe"
-                  >
-                    <path d="M450-450H200v-60h250v-250h60v250h250v60H510v250h-60v-250Z" />
-                  </svg>
-                </Button>
-              </DialogTrigger>
+                  <path d="M450-450H200v-60h250v-250h60v250h250v60H510v250h-60v-250Z" />
+                </svg>
+              </Button>
+            </DialogTrigger>
 
-            <DialogContent className="sm:max-w-[450px] rounded-2xl">
+            <DialogContent className="w-[95vw] sm:max-w-[450px] rounded-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="text-xl font-semibold">
                   Add Node / Edge
@@ -545,7 +685,7 @@ function CommunityDashboard() {
                     value={nodeName}
                     onChange={(e) => setNodeName(e.target.value)}
                   />
-                  
+
                   <Input
                     placeholder="Labels (comma separated)"
                     value={nodeLabels.join(",")}
@@ -703,98 +843,98 @@ function CommunityDashboard() {
               </Tabs>
             </DialogContent>
           </Dialog>
+        </div>
+      )}
+
+      {/* Knowledge Graph Expanded Modal */}
+      <Dialog open={isGraphModalOpen} onOpenChange={setIsGraphModalOpen}>
+        <DialogContent className="w-[95vw] max-w-[95vw] h-[85vh] sm:h-[95vh] max-h-[95vh] rounded-xl sm:rounded-2xl p-3 sm:p-6 overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              Knowledge Graph
+            </DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-hidden w-full h-full">
+            <KnowledgeGraph />
           </div>
-        )}
+        </DialogContent>
+      </Dialog>
 
-        {/* Knowledge Graph Expanded Modal */}
-        <Dialog open={isGraphModalOpen} onOpenChange={setIsGraphModalOpen}>
-          <DialogContent className="max-w-[95vw]! w-[95vw]! h-[95vh] max-h-[95vh] rounded-2xl p-6 overflow-hidden flex flex-col">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold">
-                Knowledge Graph
-              </DialogTitle>
-            </DialogHeader>
-            <div className="flex-1 overflow-hidden w-full h-full">
-              <KnowledgeGraph />
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Community Members Modal */}
-        <Dialog open={isMembersModalOpen} onOpenChange={setIsMembersModalOpen}>
-          <DialogContent className="max-w-[600px] max-h-[80vh] rounded-2xl">
-            <DialogHeader>
-              <DialogTitle className="text-xl font-semibold">
-                Community Members
-              </DialogTitle>
-            </DialogHeader>
-            <div className="overflow-y-auto max-h-[60vh]">
-              {membersLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
-                </div>
-              ) : getSortedMembers().length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No members found
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {getSortedMembers().map((member, index) => (
-                    <div
-                      key={member.id}
-                      className="flex items-center justify-between p-4 bg-muted rounded-lg hover:bg-muted/80 transition"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center w-10 h-10 rounded-full bg-purple-100 text-primary font-semibold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground">
-                            {member.username}
-                            {member.id === communityData?.ownerId && (
-                              <span className="ml-2 text-xs bg-primary text-white px-2 py-1 rounded-full">
-                                Owner
-                              </span>
-                            )}
-                            {member.id === user?.id && (
-                              <span className="ml-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-full">
-                                You
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Member since {new Date(member.createdAt).toLocaleDateString()}
-                          </p>
-                        </div>
+      {/* Community Members Modal */}
+      <Dialog open={isMembersModalOpen} onOpenChange={setIsMembersModalOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-[600px] max-h-[80vh] rounded-xl sm:rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              Community Members
+            </DialogTitle>
+          </DialogHeader>
+          <div className="overflow-y-auto max-h-[60vh]">
+            {membersLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+              </div>
+            ) : getSortedMembers().length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No members found
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {getSortedMembers().map((member, index) => (
+                  <Link
+                    key={member.id}
+                    to={`/user/${member.id}`}
+                    onClick={() => setIsMembersModalOpen(false)}
+                    className="flex items-center justify-between p-3 sm:p-4 bg-muted rounded-lg hover:bg-muted/80 transition cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                      <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-purple-100 text-primary font-semibold text-xs sm:text-base shrink-0">
+                        {index + 1}
                       </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-1">
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5 text-yellow-500"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                          <span className="font-bold text-lg text-foreground">
-                            {member.reputation || 0}
-                          </span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Reputation</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground text-sm sm:text-base truncate">
+                          {member.username}
+                          {member.id === communityData?.ownerId && (
+                            <span className="ml-1 sm:ml-2 text-xs bg-primary text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+                              Owner
+                            </span>
+                          )}
+                          {member.id === user?.id && (
+                            <span className="ml-1 sm:ml-2 text-xs bg-blue-600 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
+                              You
+                            </span>
+                          )}
+                        </p>
+                        <p className="text-xs sm:text-sm text-muted-foreground truncate">
+                          Member since{" "}
+                          {new Date(member.createdAt).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-    );
+                    <div className="text-right shrink-0 ml-2">
+                      <div className="flex items-center gap-1">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-500"
+                          viewBox="0 0 20 20"
+                          fill="currentColor"
+                        >
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                        <span className="font-bold text-base sm:text-lg text-foreground">
+                          {member.reputation || 0}
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">Rep</p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }
 
 export default CommunityDashboard;
-
-
-
