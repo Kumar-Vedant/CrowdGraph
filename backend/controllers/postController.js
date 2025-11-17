@@ -1,4 +1,4 @@
-import pkg from "@prisma/client";
+import pkg, { TargetType } from "@prisma/client";
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
@@ -23,6 +23,7 @@ const postListGet = async (req, res) => {
             username: true,
           },
         },
+        voteCount: true,
       },
     });
     const posts = postRecords.map(({ author, ...post }) => ({ ...post, authorName: author.username }));
@@ -60,6 +61,7 @@ const postGet = async (req, res) => {
             username: true,
           },
         },
+        voteCount: true,
       },
     });
     const { author, ...rest } = postRecord;
@@ -100,6 +102,7 @@ const postSearch = async (req, res) => {
             username: true,
           },
         },
+        voteCount: true,
       },
     });
 
@@ -148,11 +151,109 @@ const postCreate = async (req, res) => {
             username: true,
           },
         },
+        voteCount: true,
       },
     });
 
     const { author, ...rest } = postRecord;
     const post = { ...rest, authorName: author.username };
+    res.status(200).json({
+      success: true,
+      data: post,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error,
+    });
+  }
+};
+
+const postVote = async (req, res) => {
+  const { postId, voteValue, userId } = req.body;
+
+  try {
+    // check if vote already exists
+    const vote = await prisma.vote.findUnique({
+      where: {
+        targetId_userId: { targetId: postId, userId },
+      },
+    });
+
+    let prevVote = 0;
+    // if yes, update vote
+    if (vote) {
+      prevVote = vote.voteValue;
+
+      if (prevVote !== voteValue) {
+        await prisma.vote.update({
+          where: {
+            id: vote.id,
+          },
+          data: {
+            voteValue: voteValue,
+          },
+        });
+      }
+    }
+    // if no, create a new vote
+    else {
+      await prisma.vote.create({
+        data: {
+          targetId: postId,
+          targetType: TargetType.POST,
+          userId: userId,
+          voteValue: voteValue,
+        },
+      });
+    }
+
+    // update voteCount on post
+    await prisma.post.update({
+      where: {
+        id: postId,
+      },
+      data: {
+        voteCount: { increment: voteValue - prevVote },
+      },
+    });
+
+    const postRecord = await prisma.post.findUnique({
+      where: {
+        id: postId,
+      },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        authorId: true,
+        communityId: true,
+        createdAt: true,
+        author: {
+          select: {
+            username: true,
+          },
+        },
+        voteCount: true,
+      },
+    });
+    const { author, ...rest } = postRecord;
+    const post = { ...rest, authorName: author.username };
+
+    // update reputation of user whose post is voted on (+-2)
+    await prisma.userCommunity.update({
+      where: {
+        userId_communityId: {
+          userId: post.authorId,
+          communityId: post.communityId,
+        },
+      },
+      data: {
+        reputation: { increment: 2 * (voteValue - prevVote) },
+      },
+    });
+
     res.status(200).json({
       success: true,
       data: post,
@@ -205,10 +306,11 @@ const postUpdate = async (req, res) => {
             username: true,
           },
         },
+        voteCount: true,
       },
     });
 
-    const { author, ...rest } = postRecord;
+    const { author, ...rest } = updatedPost;
     const post = { ...rest, authorName: author.username };
     res.status(200).json({
       success: true,
@@ -248,6 +350,7 @@ export default {
   postGet,
   postSearch,
   postCreate,
+  postVote,
   postUpdate,
   postDelete,
 };

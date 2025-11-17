@@ -7,6 +7,7 @@ postRouter.get("/:communityId/community", postController.postListGet);
 postRouter.get("/:id", postController.postGet);
 postRouter.get("/:communityId/search", postController.postSearch);
 postRouter.post("/create", postController.postCreate);
+postRouter.post("/vote", postController.postVote);
 postRouter.put("/:id/update", postController.postUpdate);
 postRouter.delete("/:id/delete", postController.postDelete);
 

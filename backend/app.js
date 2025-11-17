@@ -19,6 +19,7 @@ import communityRouter from "./routes/communityRouter.js";
 import postRouter from "./routes/postRouter.js";
 import commentRouter from "./routes/commentRouter.js";
 import queryRouter from "./routes/queryRouter.js";
+import creditRouter from "./routes/creditRouter.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -38,6 +39,7 @@ app.use("/community", communityRouter);
 app.use("/post", postRouter);
 app.use("/comment", commentRouter);
 app.use("/query", queryRouter);
+app.use("/credit", creditRouter);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Express app listening on port ${PORT}!`));

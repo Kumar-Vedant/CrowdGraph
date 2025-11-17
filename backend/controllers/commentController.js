@@ -1,4 +1,4 @@
-import pkg from "@prisma/client";
+import pkg, { TargetType } from "@prisma/client";
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
@@ -141,6 +141,100 @@ const commentCreate = async (req, res) => {
     });
   }
 };
+const commentVote = async (req, res) => {
+  const { commentId, voteValue, userId } = req.body;
+
+  try {
+    // check if vote already exists
+    const vote = await prisma.vote.findUnique({
+      where: {
+        targetId_userId: { targetId: commentId, userId },
+      },
+    });
+
+    let prevVote = 0;
+    // if yes, update vote
+    if (vote) {
+      prevVote = vote.voteValue;
+
+      if (prevVote !== voteValue) {
+        await prisma.vote.update({
+          where: {
+            id: vote.id,
+          },
+          data: {
+            voteValue: voteValue,
+          },
+        });
+      }
+    }
+    // if no, create a new vote
+    else {
+      await prisma.vote.create({
+        data: {
+          targetId: commentId,
+          targetType: TargetType.COMMENT,
+          userId: userId,
+          voteValue: voteValue,
+        },
+      });
+    }
+
+    // update voteCount on comment
+    await prisma.comment.update({
+      where: {
+        id: commentId,
+      },
+      data: {
+        voteCount: { increment: voteValue - prevVote },
+      },
+    });
+
+    const commentRecord = await prisma.comment.findUnique({
+      where: {
+        id: commentId,
+      },
+      include: {
+        user: {
+          select: {
+            username: true,
+          },
+        },
+        post: {
+          select: {
+            communityId: true,
+          },
+        },
+      },
+    });
+
+    const { user, post, ...rest } = commentRecord;
+    const comment = { ...rest, username: user.username };
+
+    // update reputation of user whose comment is voted on (+-1)
+    await prisma.userCommunity.update({
+      where: {
+        userId_communityId: {
+          userId: comment.userId,
+          communityId: post.communityId,
+        },
+      },
+      data: {
+        reputation: { increment: voteValue - prevVote },
+      },
+    });
+    res.status(200).json({
+      success: true,
+      data: comment,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error,
+    });
+  }
+};
 
 const commentUpdate = async (req, res) => {
   const { id } = req.params;
@@ -216,6 +310,7 @@ export default {
   commentRepliesGet,
   commentsInPostGet,
   commentCreate,
+  commentVote,
   commentUpdate,
   commentDelete,
 };
