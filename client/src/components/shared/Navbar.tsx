@@ -1,4 +1,5 @@
 import { useAuth } from '@/context/AuthContext';
+import { useTheme } from '@/context/ThemeContext';
 import { Link } from 'react-router';
 import { useState, useEffect } from 'react';
 import { getAllUsers } from '@/services/api';
@@ -7,6 +8,7 @@ import type { User } from '@/schema';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -14,6 +16,7 @@ import {
 
 function Navbar() {
   const { user } = useAuth();
+  const { mode, toggleMode } = useTheme();
   const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data: usersData, loading: usersLoading, callApi: fetchAllUsers } = useApi(getAllUsers);
@@ -31,13 +34,8 @@ function Navbar() {
   return (
     <nav className="sticky top-0 z-50 flex items-center justify-between whitespace-nowrap border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/80 px-4 md:px-10 py-3 md:py-4 shadow-sm">
       <Link to="/" className="flex items-center gap-2 md:gap-3 text-foreground hover:opacity-80 transition-opacity">
-        <div className="size-7 md:size-8 flex items-center justify-center bg-linear-to-br from-primary to-accent rounded-lg p-1.5 shadow-md">
-          <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full text-white">
-            <path
-              d="M13.8261 30.5736C16.7203 29.8826 20.2244 29.4783 24 29.4783C27.7756 29.4783 31.2797 29.8826 34.1739 30.5736C36.9144 31.2278 39.9967 32.7669 41.3563 33.8352L24.8486 7.36089C24.4571 6.73303 23.5429 6.73303 23.1514 7.36089L6.64374 33.8352C8.00331 32.7669 11.0856 31.2278 13.8261 30.5736Z"
-              fill="currentColor"
-            ></path>
-          </svg>
+        <div>
+          <img src="/logo.png" alt="CrowdGraph" className="w-8 h-8 md:w-10 md:h-10" />
         </div>
         <h2 className="text-foreground text-lg md:text-xl font-bold tracking-tight">CrowdGraph</h2>
       </Link>
@@ -47,9 +45,9 @@ function Navbar() {
         <div className="hidden md:flex items-center gap-6 lg:gap-8">
           <Link 
             className="text-foreground/80 hover:text-foreground text-sm font-medium transition-colors relative group" 
-            to="/explore"
+            to="/communities"
           >
-            Explore
+            Communities
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full"></span>
           </Link>
           
@@ -68,6 +66,7 @@ function Navbar() {
                   </svg>
                   Global Leaderboard
                 </DialogTitle>
+                <DialogDescription>View the top contributors ranked by reputation.</DialogDescription>
               </DialogHeader>
               
               <div className="flex-1 overflow-y-auto pr-2">
@@ -142,6 +141,24 @@ function Navbar() {
         
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center gap-3">
+          {/* Light/Dark Mode Toggle */}
+          <button
+            onClick={toggleMode}
+            className="flex items-center justify-center w-10 h-10 rounded-lg bg-muted hover:bg-muted/80 transition-all border border-border group"
+            aria-label="Toggle theme mode"
+            title={mode === 'light' ? 'Switch to dark mode' : 'Switch to light mode'}
+          >
+            {mode === 'light' ? (
+              <svg className="w-5 h-5 text-foreground" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg className="w-5 h-5 text-foreground" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+              </svg>
+            )}
+          </button>
+          
           {user ? (
             <Link to={`/profile`} className="group">
               <div className="flex items-center gap-2 hover:opacity-80 transition-opacity">
@@ -190,11 +207,11 @@ function Navbar() {
         <div className="absolute top-full left-0 right-0 bg-background/98 backdrop-blur-md border-b border-border shadow-lg md:hidden">
           <div className="flex flex-col p-4 space-y-3">
             <Link 
-              to="/explore"
+              to="/communities"
               className="text-foreground/80 hover:text-foreground text-base font-medium py-2 px-3 rounded-lg hover:bg-muted transition-all"
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              Explore
+              Communities
             </Link>
             
             <button 
@@ -215,6 +232,35 @@ function Navbar() {
             >
               Contribute
             </Link>
+
+            {/* Mobile Light/Dark Toggle */}
+            <div className="border-t border-border pt-3 mt-2">
+              <button
+                onClick={toggleMode}
+                className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-muted hover:bg-muted/80 transition-all text-sm"
+              >
+                <span className="flex items-center gap-2 font-medium text-foreground">
+                  {mode === 'light' ? (
+                    <>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                      </svg>
+                      Light Mode
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                      </svg>
+                      Dark Mode
+                    </>
+                  )}
+                </span>
+                <div className={`w-10 h-5 rounded-full transition-colors ${mode === 'dark' ? 'bg-primary' : 'bg-border'}`}>
+                  <div className={`w-4 h-4 rounded-full bg-white shadow-sm transition-transform transform ${mode === 'dark' ? 'translate-x-5' : 'translate-x-0.5'} mt-0.5`} />
+                </div>
+              </button>
+            </div>
 
             <div className="border-t border-border pt-3 mt-2 space-y-2">
               {user ? (

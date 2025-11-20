@@ -1,10 +1,14 @@
 import React, { createContext, useState, useContext, useEffect, type ReactNode } from "react";
-import { themes, defaultTheme, type Theme } from "@/theme/themes";
+import { themes, defaultTheme, type Theme, type ColorFamily, colorFamilies } from "@/theme/themes";
 
 interface ThemeContextType {
   currentTheme: string;
   theme: Theme;
   setTheme: (themeName: string) => void;
+  colorFamily: ColorFamily;
+  setColorFamily: (family: ColorFamily) => void;
+  mode: 'light' | 'dark';
+  toggleMode: () => void;
   availableThemes: string[];
 }
 
@@ -30,14 +34,23 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     }
   };
 
+  const setColorFamily = (family: ColorFamily) => {
+    const mode = theme.mode;
+    const newTheme = `${family}-${mode}`;
+    setTheme(newTheme);
+  };
+
+  const toggleMode = () => {
+    const newMode = theme.mode === 'light' ? 'dark' : 'light';
+    const newTheme = `${theme.colorFamily}-${newMode}`;
+    setTheme(newTheme);
+  };
+
   // Apply theme CSS variables to document root
   useEffect(() => {
     const root = document.documentElement;
     const body = document.body;
     const colors = theme.colors;
-    
-    console.log('🎨 Applying theme:', currentTheme);
-    console.log('🎨 Theme colors:', colors);
     
     // Apply our custom CSS variables
     Object.entries(colors).forEach(([key, value]) => {
@@ -68,14 +81,12 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     // Also set body background directly as fallback
     body.style.backgroundColor = colors.background;
     body.style.color = colors.text;
-    
-    console.log('✅ Theme applied successfully');
   }, [theme, currentTheme]);
 
   const availableThemes = Object.keys(themes);
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, theme, setTheme, availableThemes }}>
+    <ThemeContext.Provider value={{ currentTheme, theme, setTheme, colorFamily: theme.colorFamily, setColorFamily, mode: theme.mode, toggleMode, availableThemes }}>
       {children}
     </ThemeContext.Provider>
   );

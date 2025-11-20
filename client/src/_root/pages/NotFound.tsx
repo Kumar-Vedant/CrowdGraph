@@ -18,7 +18,7 @@ function NotFound() {
                     <span className="truncate">Go to Home</span>
                   </button>
                 </Link>
-                <Link to="/explore">
+                <Link to="/communities">
                   <button
                     className="flex min-w-[84px] max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-muted text-foreground text-sm font-bold leading-normal tracking-[0.015em] grow"
                   >

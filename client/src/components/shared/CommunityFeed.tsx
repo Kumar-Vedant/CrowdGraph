@@ -3,7 +3,8 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, ChevronRight, MessageSquare } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageSquare, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import type { Post, Comment } from "@/schema/index";
 import { 
   getCommentsInPost, 
@@ -11,10 +12,27 @@ import {
   getRepliesToComment,
   createComment,
   createPost,
-  getPostByTitleInCommunity 
+  getPostByTitleInCommunity,
+  updatePost,
+  deletePost,
+  updateComment,
+  deleteComment
 } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
 import SearchBar from "./SearchBar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CommunityFeedProps {
   communityId: string;
@@ -41,6 +59,15 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
   const [loadingReplies, setLoadingReplies] = useState<Record<string, boolean>>({});
+  
+  // Edit/Delete states
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
+  const [editingComment, setEditingComment] = useState<Comment | null>(null);
+  const [editPostTitle, setEditPostTitle] = useState("");
+  const [editPostContent, setEditPostContent] = useState("");
+  const [editCommentContent, setEditCommentContent] = useState("");
+  const [deleteConfirmPost, setDeleteConfirmPost] = useState<Post | null>(null);
+  const [deleteConfirmComment, setDeleteConfirmComment] = useState<Comment | null>(null);
 
   // Fetch posts when component mounts or communityId changes
   useEffect(() => {
@@ -120,19 +147,21 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
         }));
         // Hide the reply box after successful submission
         setShowReplyBox((prev) => ({ ...prev, [parentId]: false }));
+        toast.success("Reply posted successfully!");
       } else {
         // This is a top-level comment - add it directly to the post's comments
         setComments((prev) => ({
           ...prev,
           [postId]: [...(prev[postId] || []), newComment as Comment],
         }));
+        toast.success("Comment posted successfully!");
       }
       
       // Clear the text input
       setCommentText((prev) => ({ ...prev, [postId + (parentId ?? "")]: "" }));
     } catch (err) {
       console.error("Failed to add comment:", err);
-      alert("Failed to add comment. Please try again.");
+      toast.error("Failed to add comment. Please try again.");
     }
   };
 
@@ -146,11 +175,118 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
       setAllPosts((prev) => [newPost, ...prev]);
       setNewPostTitle("");
       setNewPostContent("");
+      toast.success("Post created successfully!");
     } catch (err) {
       console.error("Failed to create post:", err);
-      alert("Failed to create post. Please try again.");
+      toast.error("Failed to create post. Please try again.");
     } finally {
       setPosting(false);
+    }
+  };
+
+  const handleEditPost = (post: Post) => {
+    setEditingPost(post);
+    setEditPostTitle(post.title);
+    setEditPostContent(post.content);
+  };
+
+  const handleUpdatePost = async () => {
+    if (!editingPost || !editPostTitle.trim() || !editPostContent.trim()) return;
+    try {
+      await updatePost(editingPost.id, editPostTitle.trim(), editPostContent.trim());
+      
+      // Update in both posts and allPosts
+      const updatedPost = { ...editingPost, title: editPostTitle.trim(), content: editPostContent.trim() };
+      setPosts((prev) => prev.map(p => p.id === editingPost.id ? updatedPost : p));
+      setAllPosts((prev) => prev.map(p => p.id === editingPost.id ? updatedPost : p));
+      
+      setEditingPost(null);
+      setEditPostTitle("");
+      setEditPostContent("");
+      toast.success("Post updated successfully!");
+    } catch (err) {
+      console.error("Failed to update post:", err);
+      toast.error("Failed to update post. Please try again.");
+    }
+  };
+
+  const handleDeletePost = async (post: Post) => {
+    try {
+      await deletePost(post.id);
+      setPosts((prev) => prev.filter(p => p.id !== post.id));
+      setAllPosts((prev) => prev.filter(p => p.id !== post.id));
+      setDeleteConfirmPost(null);
+      toast.success("Post deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete post:", err);
+      toast.error("Failed to delete post. Please try again.");
+    }
+  };
+
+  const handleEditComment = (comment: Comment) => {
+    setEditingComment(comment);
+    setEditCommentContent(comment.content);
+  };
+
+  const handleUpdateComment = async () => {
+    if (!editingComment || !editCommentContent.trim()) return;
+    try {
+      await updateComment(editingComment.id, editCommentContent.trim());
+      
+      const updatedComment = { ...editingComment, content: editCommentContent.trim() };
+      
+      // Update in comments or replies based on parentCommentId
+      if (editingComment.parentCommentId) {
+        // It's a reply
+        setReplies((prev) => ({
+          ...prev,
+          [editingComment.parentCommentId]: prev[editingComment.parentCommentId]?.map(r => 
+            r.id === editingComment.id ? updatedComment : r
+          ) || []
+        }));
+      } else {
+        // It's a top-level comment
+        setComments((prev) => ({
+          ...prev,
+          [editingComment.postId]: prev[editingComment.postId]?.map(c => 
+            c.id === editingComment.id ? updatedComment : c
+          ) || []
+        }));
+      }
+      
+      setEditingComment(null);
+      setEditCommentContent("");
+      toast.success("Comment updated successfully!");
+    } catch (err) {
+      console.error("Failed to update comment:", err);
+      toast.error("Failed to update comment. Please try again.");
+    }
+  };
+
+  const handleDeleteComment = async (comment: Comment) => {
+    try {
+      await deleteComment(comment.id);
+      
+      // Remove from comments or replies based on parentCommentId
+      if (comment.parentCommentId) {
+        // It's a reply
+        setReplies((prev) => ({
+          ...prev,
+          [comment.parentCommentId]: prev[comment.parentCommentId]?.filter(r => r.id !== comment.id) || []
+        }));
+      } else {
+        // It's a top-level comment
+        setComments((prev) => ({
+          ...prev,
+          [comment.postId]: prev[comment.postId]?.filter(c => c.id !== comment.id) || []
+        }));
+      }
+      
+      setDeleteConfirmComment(null);
+      toast.success("Comment deleted successfully!");
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+      toast.error("Failed to delete comment. Please try again.");
     }
   };
 
@@ -163,7 +299,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
 
     try {
       const searchResults = await getPostByTitleInCommunity(communityId, query.trim());
-      setPosts(Array.isArray(searchResults) ? searchResults : []);
+      setPosts(Array.isArray(searchResults.data) ? searchResults.data : []);
     } catch (err) {
       console.error("Failed to search posts:", err);
       // Fallback to client-side filtering
@@ -178,6 +314,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
   const renderCommentTree = (comment: Comment, depth = 0) => {
     const hasReplies = expandedReplies[comment.id];
     const isReplyBoxVisible = showReplyBox[comment.id];
+    const isAuthor = user?.id === comment.userId;
     
     return (
       <div
@@ -185,8 +322,34 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
         className={`ml-${depth * 4} mt-3 border-l border-border pl-3`}
       >
         <div className="bg-muted rounded-md p-3 hover:bg-muted/80 transition">
-          <p className="font-semibold text-sm text-foreground">{comment.username || "Unknown User"}</p>
-          <p className="text-foreground text-sm">{comment.content}</p>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <p className="font-semibold text-sm text-foreground">{comment.username || "Unknown User"}</p>
+              <p className="text-foreground text-sm mt-1">{comment.content}</p>
+            </div>
+            {isAuthor && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                    <MoreVertical size={16} />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleEditComment(comment)} className="cursor-pointer">
+                    <Pencil size={14} className="mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => setDeleteConfirmComment(comment)} 
+                    className="cursor-pointer text-destructive focus:text-destructive"
+                  >
+                    <Trash2 size={14} className="mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
           <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
             <span>{new Date(comment.createdAt).toLocaleString()}</span>
             <div className="flex gap-2">
@@ -337,13 +500,39 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
             className="p-3 sm:p-5 rounded-xl bg-card shadow-md border border-border"
           >
             <CardHeader className="pb-3 px-2 sm:px-4">
-              <CardTitle className="text-base sm:text-lg font-semibold text-foreground">
-                {post.title}
-              </CardTitle>
-              <p className="text-xs sm:text-sm text-muted-foreground">
-                Posted by <span className="font-medium">{post.authorName || "Unknown"}</span> •{" "}
-                {new Date(post.createdAt).toLocaleString()}
-              </p>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <CardTitle className="text-base sm:text-lg font-semibold text-foreground">
+                    {post.title}
+                  </CardTitle>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    Posted by <span className="font-medium">{post.authorName || "Unknown"}</span> •{" "}
+                    {new Date(post.createdAt).toLocaleString()}
+                  </p>
+                </div>
+                {user?.id === post.authorId && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                        <MoreVertical size={16} />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleEditPost(post)} className="cursor-pointer">
+                        <Pencil size={14} className="mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeleteConfirmPost(post)} 
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                      >
+                        <Trash2 size={14} className="mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </CardHeader>
 
             <CardContent className="px-2 sm:px-4">
@@ -398,6 +587,114 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
           </Card>
         ))
       )}
+
+      {/* Edit Post Modal */}
+      <Dialog open={!!editingPost} onOpenChange={(open) => !open && setEditingPost(null)}>
+        <DialogContent className="w-[95vw] sm:max-w-[600px] rounded-xl">
+          <DialogHeader>
+            <DialogTitle>Edit Post</DialogTitle>
+            <DialogDescription>Make changes to your post below.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Title</label>
+              <input
+                type="text"
+                value={editPostTitle}
+                onChange={(e) => setEditPostTitle(e.target.value)}
+                className="w-full p-2 border border-border rounded-md text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Content</label>
+              <Textarea
+                value={editPostContent}
+                onChange={(e) => setEditPostContent(e.target.value)}
+                className="min-h-[150px]"
+              />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setEditingPost(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdatePost}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Post Confirmation Modal */}
+      <Dialog open={!!deleteConfirmPost} onOpenChange={(open) => !open && setDeleteConfirmPost(null)}>
+        <DialogContent className="w-[95vw] sm:max-w-[450px] rounded-xl">
+          <DialogHeader>
+            <DialogTitle>Delete Post</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this post? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="ghost" onClick={() => setDeleteConfirmPost(null)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => deleteConfirmPost && handleDeletePost(deleteConfirmPost)}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Comment Modal */}
+      <Dialog open={!!editingComment} onOpenChange={(open) => !open && setEditingComment(null)}>
+        <DialogContent className="w-[95vw] sm:max-w-[500px] rounded-xl">
+          <DialogHeader>
+            <DialogTitle>Edit Comment</DialogTitle>
+            <DialogDescription>Make changes to your comment below.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <Textarea
+              value={editCommentContent}
+              onChange={(e) => setEditCommentContent(e.target.value)}
+              className="min-h-[100px]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setEditingComment(null)}>
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateComment}>
+                Save Changes
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Comment Confirmation Modal */}
+      <Dialog open={!!deleteConfirmComment} onOpenChange={(open) => !open && setDeleteConfirmComment(null)}>
+        <DialogContent className="w-[95vw] sm:max-w-[450px] rounded-xl">
+          <DialogHeader>
+            <DialogTitle>Delete Comment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this comment? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="ghost" onClick={() => setDeleteConfirmComment(null)}>
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => deleteConfirmComment && handleDeleteComment(deleteConfirmComment)}
+            >
+              Delete
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

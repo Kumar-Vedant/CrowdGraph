@@ -5,7 +5,7 @@ import type { Community } from "@/schema";
 import { getFeaturedCommunities, searchCommunities } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
 
-function Explore() {
+function Communities() {
   const { data: featuredCommunities, loading: loadingFeatured, callApi: callFeaturedCommunities } = useApi(getFeaturedCommunities);
   const { data: searchResults, loading: searchLoading, error: searchError, callApi: callSearchCommunities } = useApi(searchCommunities);
 
@@ -71,8 +71,5 @@ function Explore() {
   );
 }
 
-export default Explore;
-
-
-
+export default Communities;
 

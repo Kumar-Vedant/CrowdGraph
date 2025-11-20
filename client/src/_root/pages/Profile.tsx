@@ -260,7 +260,14 @@ const Contributions = () => {
 };
 
 const Settings = ({ user }: { user: any }) => {
-  const { currentTheme, setTheme, availableThemes } = useTheme();
+  const { currentTheme, setTheme, colorFamily, mode } = useTheme();
+  
+  const colorThemes = [
+    { color: 'purple', label: 'Purple', primary: '#9333ea', secondary: '#c084fc', accent: '#a855f7' },
+    { color: 'blue', label: 'Blue', primary: '#0ea5e9', secondary: '#0c4a6e', accent: '#06b6d4' },
+    { color: 'gray', label: 'Gray Stone', primary: '#4B5563', secondary: '#6B7280', accent: '#7F8287' },
+    { color: 'pink', label: 'Pink', primary: '#ec4899', secondary: '#be185d', accent: '#f472b6' },
+  ];
   
   return (
     <div className="p-4 sm:p-6">
@@ -292,45 +299,47 @@ const Settings = ({ user }: { user: any }) => {
         {/* Theme Settings */}
         <div className="space-y-4 pt-4 border-t border-border">
           <h3 className="text-lg font-semibold text-foreground">Appearance</h3>
+          <p className="text-sm text-muted-foreground">Choose your preferred color theme. You can toggle between light and dark mode using the button in the navbar.</p>
           
-          {/* Light Themes Section */}
+          {/* Color Theme Selection */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-3">Light Themes</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {availableThemes.filter(name => ['purple', 'ocean', 'rose'].includes(name)).map((themeName) => {
-                const theme = themes[themeName];
-                const isActive = currentTheme === themeName;
+            <label className="block text-sm font-medium text-foreground mb-3">Color Theme</label>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {colorThemes.map((theme) => {
+                const isActive = colorFamily === theme.color;
                 
                 return (
                   <button
-                    key={themeName}
-                    onClick={() => setTheme(themeName)}
+                    key={theme.color}
+                    onClick={() => setTheme(`${theme.color}-${mode}`)}
                     className={`relative p-4 rounded-lg border-2 transition-all ${
                       isActive
-                        ? 'border-primary shadow-lg scale-105'
+                        ? 'border-primary shadow-lg scale-105 bg-primary/5'
                         : 'border-border hover:border-primary/50 hover:shadow-md'
                     }`}
                   >
                     {/* Theme Preview */}
-                    <div className="flex gap-1 mb-2">
+                    <div className="flex gap-1 mb-3 justify-center">
                       <div
-                        className="w-8 h-8 rounded"
-                        style={{ backgroundColor: theme.colors.primary }}
+                        className="w-6 h-6 rounded-full shadow-sm"
+                        style={{ backgroundColor: theme.primary }}
                       />
                       <div
-                        className="w-8 h-8 rounded"
-                        style={{ backgroundColor: theme.colors.secondary }}
+                        className="w-6 h-6 rounded-full shadow-sm"
+                        style={{ backgroundColor: theme.secondary }}
                       />
                       <div
-                        className="w-8 h-8 rounded"
-                        style={{ backgroundColor: theme.colors.accent }}
+                        className="w-6 h-6 rounded-full shadow-sm"
+                        style={{ backgroundColor: theme.accent }}
                       />
                     </div>
                     
-                    {/* Theme Name */}
-                    <p className="text-sm font-semibold text-foreground text-left">
-                      {theme.name}
-                    </p>
+                    {/* Theme Icon & Name */}
+                    <div className="flex flex-col items-center gap-1">
+                      <p className="text-sm font-semibold text-foreground">
+                        {theme.label}
+                      </p>
+                    </div>
                     
                     {/* Active Indicator */}
                     {isActive && (
@@ -353,66 +362,28 @@ const Settings = ({ user }: { user: any }) => {
               })}
             </div>
           </div>
-
-          {/* Dark Themes Section */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-3">Dark Themes</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-              {availableThemes.filter(name => ['midnight', 'forest', 'sunset'].includes(name)).map((themeName) => {
-                const theme = themes[themeName];
-                const isActive = currentTheme === themeName;
-                
-                return (
-                  <button
-                    key={themeName}
-                    onClick={() => setTheme(themeName)}
-                    className={`relative p-4 rounded-lg border-2 transition-all ${
-                      isActive
-                        ? 'border-primary shadow-lg scale-105'
-                        : 'border-border hover:border-primary/50 hover:shadow-md'
-                    }`}
-                  >
-                    {/* Theme Preview */}
-                    <div className="flex gap-1 mb-2">
-                      <div
-                        className="w-8 h-8 rounded"
-                        style={{ backgroundColor: theme.colors.primary }}
-                      />
-                      <div
-                        className="w-8 h-8 rounded"
-                        style={{ backgroundColor: theme.colors.secondary }}
-                      />
-                      <div
-                        className="w-8 h-8 rounded"
-                        style={{ backgroundColor: theme.colors.accent }}
-                      />
-                    </div>
-                    
-                    {/* Theme Name */}
-                    <p className="text-sm font-semibold text-foreground text-left">
-                      {theme.name}
-                    </p>
-                    
-                    {/* Active Indicator */}
-                    {isActive && (
-                      <div className="absolute top-2 right-2">
-                        <svg
-                          className="w-5 h-5 text-primary"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+          
+          {/* Current Mode Display */}
+          <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+            <span className="text-sm text-muted-foreground">Current mode:</span>
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1">
+              {mode === 'light' ? (
+                <>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  </svg>
+                  Light
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
+                  Dark
+                </>
+              )}
+            </span>
+            <span className="text-xs text-muted-foreground ml-auto">Use the navbar toggle to switch</span>
           </div>
         </div>
 

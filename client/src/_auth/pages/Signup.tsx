@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 function Signup() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ function Signup() {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      toast.error("Passwords do not match!");
       return;
     }
 
@@ -41,14 +42,15 @@ function Signup() {
       if (res.ok) {
         const data = await res.json();
         console.log("Signup successful:", data);
+        toast.success("Account created successfully! Redirecting to login...");
         navigate("/login"); // 🔁 Redirect to login page
       } else {
         const err = await res.json();
-        alert(`Signup failed: ${err.message || "Unknown error"}`);
+        toast.error(`Signup failed: ${err.message || "Unknown error"}`);
       }
     } catch (error) {
       console.error(error);
-      alert("Error connecting to server");
+      toast.error("Error connecting to server");
     }
   };
 

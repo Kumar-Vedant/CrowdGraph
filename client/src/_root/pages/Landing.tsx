@@ -41,7 +41,7 @@ function landing() {
                     </h2>
                   </div>
                   <div className="flex-wrap gap-3 flex justify-center px-4">
-                    <Link to='/explore'>
+                    <Link to='/Communities'>
                       <button
                         className="flex min-w-[84px] w-full sm:w-auto max-w-[480px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 @[480px]:h-12 @[480px]:px-5 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] @[480px]:text-base @[480px]:font-bold @[480px]:leading-normal @[480px]:tracking-[0.015em]"
                       >

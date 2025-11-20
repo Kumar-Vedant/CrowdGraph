@@ -1,7 +1,7 @@
 import RootLayout from './_root/RootLayout'
 import { Route, Routes } from 'react-router-dom'
 import Landing from './_root/pages/Landing'
-import Explore from './_root/pages/Explore'
+import Communities from './_root/pages/Communities'
 import Profile from './_root/pages/Profile'
 import UserProfile from './_root/pages/UserProfile'
 import AuthLayout from './_auth/AuthLayout'
@@ -10,6 +10,7 @@ import Login from './_auth/pages/Login'
 import NotFound from './_root/pages/NotFound'
 import CommunityDashboard from './_root/pages/CommunityDashboard'
 import { ThemeProvider } from './context/ThemeContext'
+import { Toaster } from 'sonner'
 
 function App() {
   return (
@@ -18,7 +19,7 @@ function App() {
         <Routes>
           <Route element={<RootLayout />}>
             <Route index element={<Landing />} />
-            <Route path="/explore" element={<Explore />} />
+            <Route path="/communities" element={<Communities />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/user/:userId" element={<UserProfile />} />
             <Route path="/community/:communityId" element={<CommunityDashboard />} />
@@ -30,6 +31,7 @@ function App() {
           </Route>
         </Routes>
       </main>
+      <Toaster position="bottom-right" />
     </ThemeProvider>
   )
 }

@@ -1,6 +1,7 @@
 import { useNavigate, useParams, Link } from "react-router-dom";
 import SearchBar from "../../components/shared/SearchBar";
 import { CommunityFeed } from "@/components/shared/CommunityFeed";
+import { toast } from "sonner";
 import {
   getUserById,
   getUsersInCommunity,
@@ -8,6 +9,8 @@ import {
   joinCommunity,
   leaveCommunity,
   getGraphProposalsInCommunity,
+  voteNodeProposal,
+  voteEdgeProposal,
 } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
 import { useEffect, useState } from "react";
@@ -16,13 +19,12 @@ import type {
   User,
   Node,
   Edge,
-  NodeProposal,
-  EdgeProposal,
   GraphProposals,
 } from "@/schema";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -54,30 +56,56 @@ function CommunityFeedSection({
 function ContributionQueueSection({
   proposalsData,
   proposalsLoading,
+  onViewMore,
+  onVote,
 }: {
   proposalsData: GraphProposals | null;
   proposalsLoading: boolean;
+  onViewMore: () => void;
+  onVote: (proposalId: string, proposalType: 'node' | 'edge', voteValue: number) => Promise<void>;
 }) {
+  // Combine and sort all proposals by date
+  const getAllProposalsSortedByDate = () => {
+    if (!proposalsData) return [];
+    
+    const allProposals = [
+      ...(proposalsData.nodeProposals || []).map(p => ({ ...p, proposalType: 'node' as const })),
+      ...(proposalsData.edgeProposals || []).map(p => ({ ...p, proposalType: 'edge' as const }))
+    ];
+    
+    return allProposals.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    ).slice(0, 5); // Only top 5
+  };
+
+  const topProposals = getAllProposalsSortedByDate();
+
   return (
     <div className="w-full lg:w-[360px] lg:min-w-[360px]">
-      <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
-        Contribution Queue
-      </h2>
+      <div className="flex items-center justify-between px-4 pb-3 pt-5">
+        <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em]">
+          Contribution Queue
+        </h2>
+        {topProposals.length > 0 && (
+          <button
+            onClick={onViewMore}
+            className="text-xs sm:text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+          >
+            View More →
+          </button>
+        )}
+      </div>
 
       {proposalsLoading ? (
         <div className="flex justify-center items-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
         </div>
-      ) : proposalsData &&
-        (proposalsData.nodeProposals?.length > 0 ||
-          proposalsData.edgeProposals?.length > 0) ? (
+      ) : topProposals.length > 0 ? (
         <div className="flex flex-col gap-3 px-4 pb-4">
-          {/* Node Proposals */}
-          {proposalsData.nodeProposals
-            ?.filter((p: NodeProposal) => p.status === "PENDING")
-            .map((proposal: NodeProposal) => (
+          {topProposals.map((proposal: any) => 
+            proposal.proposalType === 'node' ? (
               <div
-                key={proposal.id}
+                key={`node-${proposal.id}`}
                 className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-center rounded-lg bg-primary/10 shrink-0 size-12">
@@ -97,8 +125,12 @@ function ContributionQueueSection({
                     <p className="text-foreground text-sm font-semibold truncate">
                       {proposal.name || "New Node"}
                     </p>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-warning/20 text-warning-foreground shrink-0">
-                      Node
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${
+                      proposal.status === 'PENDING' ? 'bg-warning/20 text-warning-foreground' :
+                      proposal.status === 'APPROVED' ? 'bg-success/20 text-success' :
+                      'bg-destructive/20 text-destructive'
+                    }`}>
+                      {proposal.status}
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1 mb-2">
@@ -112,11 +144,14 @@ function ContributionQueueSection({
                     ))}
                   </div>
                   <p className="text-muted-foreground text-xs mb-2">
-                    By {proposal.userName || "Unknown"} •{" "}
+                    By {proposal.username || "Unknown"} •{" "}
                     {new Date(proposal.createdAt).toLocaleDateString()}
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 text-xs">
+                    <button
+                      onClick={() => onVote(proposal.id, 'node', 1)}
+                      className="flex items-center gap-1 text-xs hover:bg-accent/10 rounded px-1.5 py-1 transition-colors"
+                    >
                       <svg
                         className="w-4 h-4 text-success"
                         fill="currentColor"
@@ -131,8 +166,11 @@ function ContributionQueueSection({
                       <span className="text-success font-medium">
                         {proposal.upvotes}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs">
+                    </button>
+                    <button
+                      onClick={() => onVote(proposal.id, 'node', -1)}
+                      className="flex items-center gap-1 text-xs hover:bg-destructive/10 rounded px-1.5 py-1 transition-colors"
+                    >
                       <svg
                         className="w-4 h-4 text-destructive"
                         fill="currentColor"
@@ -147,21 +185,16 @@ function ContributionQueueSection({
                       <span className="text-destructive font-medium">
                         {proposal.downvotes}
                       </span>
-                    </div>
+                    </button>
                     <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
                       Review →
                     </button>
                   </div>
                 </div>
               </div>
-            ))}
-
-          {/* Edge Proposals */}
-          {proposalsData.edgeProposals
-            ?.filter((p: EdgeProposal) => p.status === "PENDING")
-            .map((proposal: EdgeProposal) => (
+            ) : (
               <div
-                key={proposal.id}
+                key={`edge-${proposal.id}`}
                 className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
               >
                 <div className="flex items-center justify-center rounded-lg bg-accent/10 shrink-0 size-12">
@@ -181,8 +214,12 @@ function ContributionQueueSection({
                     <p className="text-foreground text-sm font-semibold truncate">
                       {proposal.type}
                     </p>
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-accent/20 text-accent shrink-0">
-                      Edge
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium shrink-0 ${
+                      proposal.status === 'PENDING' ? 'bg-warning/20 text-warning-foreground' :
+                      proposal.status === 'APPROVED' ? 'bg-success/20 text-success' :
+                      'bg-destructive/20 text-destructive'
+                    }`}>
+                      {proposal.status}
                     </span>
                   </div>
                   {proposal.properties &&
@@ -204,11 +241,14 @@ function ContributionQueueSection({
                       </div>
                     )}
                   <p className="text-muted-foreground text-xs mb-2">
-                    By {proposal.userName || "Unknown"} •{" "}
+                    By {proposal.username || "Unknown"} •{" "}
                     {new Date(proposal.createdAt).toLocaleDateString()}
                   </p>
                   <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 text-xs">
+                    <button
+                      onClick={() => onVote(proposal.id, 'edge', 1)}
+                      className="flex items-center gap-1 text-xs hover:bg-success/10 rounded px-1.5 py-1 transition-colors"
+                    >
                       <svg
                         className="w-4 h-4 text-success"
                         fill="currentColor"
@@ -223,8 +263,11 @@ function ContributionQueueSection({
                       <span className="text-success font-medium">
                         {proposal.upvotes}
                       </span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs">
+                    </button>
+                    <button
+                      onClick={() => onVote(proposal.id, 'edge', -1)}
+                      className="flex items-center gap-1 text-xs hover:bg-destructive/10 rounded px-1.5 py-1 transition-colors"
+                    >
                       <svg
                         className="w-4 h-4 text-destructive"
                         fill="currentColor"
@@ -239,14 +282,15 @@ function ContributionQueueSection({
                       <span className="text-destructive font-medium">
                         {proposal.downvotes}
                       </span>
-                    </div>
+                    </button>
                     <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
                       Review →
                     </button>
                   </div>
                 </div>
               </div>
-            ))}
+            )
+          )}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-12 px-4">
@@ -266,7 +310,7 @@ function ContributionQueueSection({
             </svg>
           </div>
           <p className="text-muted-foreground text-sm text-center">
-            No pending proposals
+            No contributions yet
           </p>
           <p className="text-muted-foreground text-xs text-center mt-1">
             Contributions will appear here for review
@@ -274,6 +318,269 @@ function ContributionQueueSection({
         </div>
       )}
     </div>
+  );
+}
+
+// Contribution Queue Modal Component
+function ContributionQueueModal({
+  isOpen,
+  onClose,
+  proposalsData,
+  proposalsLoading,
+  onVote,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  proposalsData: GraphProposals | null;
+  proposalsLoading: boolean;
+  onVote: (proposalId: string, proposalType: 'node' | 'edge', voteValue: number) => Promise<void>;
+}) {
+  const [statusFilter, setStatusFilter] = useState<'all' | 'PENDING' | 'APPROVED' | 'REJECTED'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'node' | 'edge'>('all');
+
+  // Get all proposals sorted by date
+  const getFilteredProposals = () => {
+    if (!proposalsData) return [];
+    
+    let allProposals = [
+      ...(proposalsData.nodeProposals || []).map(p => ({ ...p, proposalType: 'node' as const })),
+      ...(proposalsData.edgeProposals || []).map(p => ({ ...p, proposalType: 'edge' as const }))
+    ];
+
+    // Apply type filter
+    if (typeFilter !== 'all') {
+      allProposals = allProposals.filter(p => p.proposalType === typeFilter);
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      allProposals = allProposals.filter(p => p.status === statusFilter);
+    }
+
+    // Sort by date (most recent first)
+    return allProposals.sort((a, b) => 
+      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  };
+
+  const filteredProposals = getFilteredProposals();
+
+  const renderProposal = (proposal: any) => {
+    const isNode = proposal.proposalType === 'node';
+    
+    return (
+      <div
+        key={`${proposal.proposalType}-${proposal.id}`}
+        className="flex items-start gap-3 bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow"
+      >
+        <div className={`flex items-center justify-center rounded-lg ${isNode ? 'bg-primary/10' : 'bg-accent/10'} shrink-0 size-12`}>
+          {isNode ? (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24px"
+              height="24px"
+              fill="currentColor"
+              className="text-primary"
+              viewBox="0 0 256 256"
+            >
+              <path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,192a88,88,0,1,1,88-88A88.1,88.1,0,0,1,128,216Zm40-68a28,28,0,0,1-28,28h-4v8a8,8,0,0,1-16,0v-8H104a8,8,0,0,1,0-16h36a12,12,0,0,0,0-24H116a28,28,0,0,1,0-56h4V72a8,8,0,0,1,16,0v8h16a8,8,0,0,1,0,16H116a12,12,0,0,0,0,24h24A28,28,0,0,1,168,148Z"></path>
+            </svg>
+          ) : (
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24px"
+              height="24px"
+              fill="currentColor"
+              className="text-accent"
+              viewBox="0 0 256 256"
+            >
+              <path d="M137.54,186.36a8,8,0,0,1,0,11.31l-9.94,10A56,56,0,0,1,48.38,128.4L72.5,104.28A56,56,0,0,1,149.31,102a8,8,0,1,1-10.64,12,40,40,0,0,0-54.85,1.63L59.7,139.72a40,40,0,0,0,56.58,56.58l9.94-9.94A8,8,0,0,1,137.54,186.36Zm70.08-138a56.08,56.08,0,0,0-79.22,0l-9.94,9.95a8,8,0,0,0,11.32,11.31l9.94-9.94a40,40,0,0,1,56.58,56.58L172.18,140.4A40,40,0,0,1,117.33,142,8,8,0,1,0,106.69,154a56,56,0,0,0,76.81-2.26l24.12-24.12A56.08,56.08,0,0,0,207.62,48.38Z"></path>
+            </svg>
+          )}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <p className="text-foreground text-sm font-semibold truncate">
+              {isNode ? (proposal.name || "New Node") : proposal.type}
+            </p>
+            <div className="flex gap-1 shrink-0">
+              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                proposal.status === 'PENDING' ? 'bg-warning/20 text-warning-foreground' :
+                proposal.status === 'APPROVED' ? 'bg-success/20 text-success' :
+                'bg-destructive/20 text-destructive'
+              }`}>
+                {proposal.status}
+              </span>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground">
+                {isNode ? 'Node' : 'Edge'}
+              </span>
+            </div>
+          </div>
+          {isNode && proposal.labels && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {proposal.labels.map((label: string, idx: number) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary"
+                >
+                  {label}
+                </span>
+              ))}
+            </div>
+          )}
+          {!isNode && proposal.properties && proposal.properties.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {proposal.properties.map(
+                (prop: { key: string; value: any }, idx: number) => (
+                  <span key={idx} className="text-xs text-muted-foreground">
+                    {prop.key}: {String(prop.value)}
+                  </span>
+                )
+              )}
+            </div>
+          )}
+          <p className="text-muted-foreground text-xs mb-2">
+            By {proposal.username || "Unknown"} •{" "}
+            {new Date(proposal.createdAt).toLocaleDateString()}
+          </p>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => onVote(proposal.id, proposal.proposalType, 1)}
+              className="flex items-center gap-1 text-xs hover:bg-success/10 rounded px-1.5 py-1 transition-colors"
+            >
+              <svg
+                className="w-4 h-4 text-success"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="text-success font-medium">{proposal.upvotes}</span>
+            </button>
+            <button
+              onClick={() => onVote(proposal.id, proposal.proposalType, -1)}
+              className="flex items-center gap-1 text-xs hover:bg-destructive/10 rounded px-1.5 py-1 transition-colors"
+            >
+              <svg
+                className="w-4 h-4 text-destructive"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              <span className="text-destructive font-medium">{proposal.downvotes}</span>
+            </button>
+            <button className="ml-auto text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+              Review →
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="w-[95vw] max-w-[900px] max-h-[85vh] rounded-xl sm:rounded-2xl overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-semibold">
+            All Contributions
+          </DialogTitle>
+          <DialogDescription>Browse and filter all node and edge contributions in this community.</DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-col gap-4 overflow-hidden flex-1">
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 px-1">
+            <div className="flex-1">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">
+                Type Filter
+              </label>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant={typeFilter === 'all' ? 'default' : 'outline'}
+                  onClick={() => setTypeFilter('all')}
+                  className="flex-1"
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={typeFilter === 'node' ? 'default' : 'outline'}
+                  onClick={() => setTypeFilter('node')}
+                  className="flex-1"
+                >
+                  Nodes
+                </Button>
+                <Button
+                  size="sm"
+                  variant={typeFilter === 'edge' ? 'default' : 'outline'}
+                  onClick={() => setTypeFilter('edge')}
+                  className="flex-1"
+                >
+                  Edges
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Tabs */}
+          <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)} className="flex-1 flex flex-col overflow-hidden">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="PENDING">Pending</TabsTrigger>
+              <TabsTrigger value="APPROVED">Approved</TabsTrigger>
+              <TabsTrigger value="REJECTED">Rejected</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value={statusFilter} className="flex-1 overflow-y-auto mt-4">
+              {proposalsLoading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary"></div>
+                </div>
+              ) : filteredProposals.length > 0 ? (
+                <div className="flex flex-col gap-3 pr-2">
+                  {filteredProposals.map(renderProposal)}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <div className="w-16 h-16 mb-4 rounded-full bg-muted flex items-center justify-center">
+                    <svg
+                      className="w-8 h-8 text-muted-foreground"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                  </div>
+                  <p className="text-muted-foreground text-sm text-center">
+                    No contributions found
+                  </p>
+                  <p className="text-muted-foreground text-xs text-center mt-1">
+                    Try adjusting your filters
+                  </p>
+                </div>
+              )}
+            </TabsContent>
+          </Tabs>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -306,14 +613,19 @@ function CommunityDashboard() {
   const { loading: leaveLoading, callApi: callLeaveApi } =
     useApi(leaveCommunity);
   const {
-    data: proposalsData,
+    data: proposalsResponse,
     loading: proposalsLoading,
     callApi: callProposalsApi,
-  } = useApi<GraphProposals>(getGraphProposalsInCommunity);
+  } = useApi(getGraphProposalsInCommunity);
+  const { callApi: callVoteNodeApi } = useApi(voteNodeProposal);
+  const { callApi: callVoteEdgeApi } = useApi(voteEdgeProposal);
+
+  const proposalsData = proposalsResponse as GraphProposals | null;
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
+  const [isContributionQueueModalOpen, setIsContributionQueueModalOpen] = useState(false);
   const [isMemberOfCommunity, setIsMemberOfCommunity] = useState(false);
 
   // Check if user is a member
@@ -326,6 +638,41 @@ function CommunityDashboard() {
     }
   }, [communityMembers, user]);
 
+  // --- Vote handler ---
+  const handleVote = async (proposalId: string, proposalType: 'node' | 'edge', voteValue: number) => {
+    if (!user) {
+      toast.error("You must be logged in to vote.");
+      return;
+    }
+
+    try {
+      let response;
+      if (proposalType === 'node') {
+        response = await callVoteNodeApi(proposalId, voteValue, user.id);
+      } else {
+        response = await callVoteEdgeApi(proposalId, voteValue, user.id);
+      }
+      
+      // Show success toast based on response
+      if (!response.success) {
+        toast.error(response.error || "Failed to vote. Please try again.");
+      } else if (voteValue === 1) {
+        toast.success("Upvoted!");
+      } else if (voteValue === -1) {
+        toast.success("Downvoted!");
+      } else {
+        toast.success("Vote cleared!");
+      }
+    
+      // Refresh proposals after voting
+      if (communityId) {
+        await callProposalsApi(communityId);
+      }
+    } catch (error) {
+      toast.error("Failed to vote. Please try again.");
+    }
+  };
+
   // --- Join/Leave handlers ---
   const handleJoinCommunity = async () => {
     if (!user || !communityId) return;
@@ -333,8 +680,9 @@ function CommunityDashboard() {
       await callJoinApi(communityId, user.id);
       // Refresh community members list
       await callMembersApi(communityId);
+      toast.success("Successfully joined community!");
     } catch (error) {
-      console.error("Failed to join community:", error);
+      toast.error("Failed to join community. Please try again.");
     }
   };
 
@@ -344,8 +692,9 @@ function CommunityDashboard() {
       await callLeaveApi(communityId, user.id);
       // Refresh community members list
       await callMembersApi(communityId);
+      toast.success("Successfully left community!");
     } catch (error) {
-      console.error("Failed to leave community:", error);
+      toast.error("Failed to leave community. Please try again.");
     }
   };
 
@@ -410,14 +759,14 @@ function CommunityDashboard() {
   // --- Node submit ---
   const handleNodeSubmit = () => {
     if (!nodeName.trim()) {
-      alert("Node name is required!");
+      toast.error("Node name is required!");
       return;
     }
 
     // Ensure no property has a key but no value
     for (const prop of nodeProperties) {
       if (prop.key.trim() && !prop.value.trim()) {
-        alert(`Property "${prop.key}" must have a value!`);
+        toast.error(`Property "${prop.key}" must have a value!`);
         return;
       }
     }
@@ -432,7 +781,7 @@ function CommunityDashboard() {
       properties: formattedProps,
     };
 
-    console.log("✅ Node added:", newNode);
+    toast.success("Node added successfully!");
 
     setIsModalOpen(false);
     setNodeLabels([]);
@@ -443,14 +792,14 @@ function CommunityDashboard() {
   // --- Edge submit ---
   const handleEdgeSubmit = () => {
     if (!edgeData.sourceId || !edgeData.targetId || !edgeData.type) {
-      alert("Edge source, target, and type are mandatory!");
+      toast.error("Edge source, target, and type are mandatory!");
       return;
     }
 
     // Ensure no property has a key but no value
     for (const prop of edgeProperties) {
       if (prop.key.trim() && !prop.value.trim()) {
-        alert(`Property "${prop.key}" must have a value!`);
+        toast.error(`Property "${prop.key}" must have a value!`);
         return;
       }
     }
@@ -466,7 +815,7 @@ function CommunityDashboard() {
       properties: formattedProps,
     };
 
-    console.log("✅ Edge added:", newEdge);
+    toast.success("Edge added successfully!");
 
     setIsModalOpen(false);
     setEdgeData({});
@@ -508,10 +857,10 @@ function CommunityDashboard() {
               "This community doesn't exist or has been removed."}
           </p>
           <button
-            onClick={() => navigate("/explore")}
+            onClick={() => navigate("/Communities")}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
           >
-            Back to Explore
+            Back to Communities
           </button>
         </div>
       </div>
@@ -545,7 +894,7 @@ function CommunityDashboard() {
                   </p>
                   {!membersLoading && memberCount > 0 && (
                     <button
-                      className="px-3 py-1 bg-primary text-white text-xs font-medium rounded-full hover:bg-primary/90 transition-colors shadow-sm"
+                      className="px-3 py-1 bg-primary/50 text-white text-xs font-medium rounded-full hover:bg-primary/20 transition-colors shadow-sm"
                       onClick={() => setIsMembersModalOpen(true)}
                     >
                       View Members
@@ -590,13 +939,13 @@ function CommunityDashboard() {
                 </div>
               )}
               {/* Knowledge Graph Section */}
-            <div className="w-full lg:w-[400px] lg:min-w-[400px]">
+            <div className="w-full lg:flex-1 lg:max-w-[500px]">
               <div className="bg-card rounded-lg shadow-sm p-4 relative">
                 <h2 className="text-foreground text-lg sm:text-xl font-bold mb-4">
                   Knowledge Graph
                 </h2>
-                <div className="w-full h-[400px] overflow-hidden rounded-lg">
-                  <KnowledgeGraph onExpand={() => setIsGraphModalOpen(true)} />
+                <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] overflow-hidden rounded-lg">
+                  <KnowledgeGraph onExpand={() => setIsGraphModalOpen(true)} isExpanded={false} />
                 </div>
               </div>
             </div>
@@ -625,6 +974,8 @@ function CommunityDashboard() {
                 <ContributionQueueSection
                   proposalsData={proposalsData}
                   proposalsLoading={proposalsLoading}
+                  onViewMore={() => setIsContributionQueueModalOpen(true)}
+                  onVote={handleVote}
                 />
               </TabsContent>
             </Tabs>
@@ -639,6 +990,8 @@ function CommunityDashboard() {
             <ContributionQueueSection
               proposalsData={proposalsData}
               proposalsLoading={proposalsLoading}
+              onViewMore={() => setIsContributionQueueModalOpen(true)}
+              onVote={handleVote}
             />
           </div>
         </div>
@@ -670,6 +1023,7 @@ function CommunityDashboard() {
                 <DialogTitle className="text-xl font-semibold">
                   Add Node / Edge
                 </DialogTitle>
+                <DialogDescription>Propose a new node or edge to contribute to this knowledge graph.</DialogDescription>
               </DialogHeader>
 
               <Tabs defaultValue="node" className="w-full">
@@ -848,17 +1202,27 @@ function CommunityDashboard() {
 
       {/* Knowledge Graph Expanded Modal */}
       <Dialog open={isGraphModalOpen} onOpenChange={setIsGraphModalOpen}>
-        <DialogContent className="w-[95vw] max-w-[95vw] h-[85vh] sm:h-[95vh] max-h-[95vh] rounded-xl sm:rounded-2xl p-3 sm:p-6 overflow-hidden flex flex-col">
+        <DialogContent className="w-[95vw] max-w-[95vw] h-[85vh] sm:h-[90vh] max-h-[90vh] rounded-xl sm:rounded-2xl p-3 sm:p-6 overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold">
               Knowledge Graph
             </DialogTitle>
+            <DialogDescription>Explore the interactive knowledge graph visualization of this community.</DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-hidden w-full h-full">
-            <KnowledgeGraph />
+            <KnowledgeGraph isExpanded={true} />
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Contribution Queue Modal */}
+      <ContributionQueueModal
+        isOpen={isContributionQueueModalOpen}
+        onClose={() => setIsContributionQueueModalOpen(false)}
+        proposalsData={proposalsData}
+        proposalsLoading={proposalsLoading}
+        onVote={handleVote}
+      />
 
       {/* Community Members Modal */}
       <Dialog open={isMembersModalOpen} onOpenChange={setIsMembersModalOpen}>
@@ -867,6 +1231,7 @@ function CommunityDashboard() {
             <DialogTitle className="text-xl font-semibold">
               Community Members
             </DialogTitle>
+            <DialogDescription>View all members of this community sorted by reputation.</DialogDescription>
           </DialogHeader>
           <div className="overflow-y-auto max-h-[60vh]">
             {membersLoading ? (

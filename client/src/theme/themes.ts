@@ -1,5 +1,7 @@
 export interface Theme {
   name: string;
+  mode: "light" | "dark";
+  colorFamily: "purple" | "blue" | "gray" | "pink";
   colors: {
     primary: string;
     primaryDark: string;
@@ -31,196 +33,329 @@ export interface Theme {
 }
 
 export const themes: Record<string, Theme> = {
-  // LIGHT THEMES
-  purple: {
-    name: "Purple Light",
+  // =============================
+  // PURPLE – LIGHT (Community)
+  // =============================
+  "purple-light": {
+    name: "Purple",
+    mode: "light",
+    colorFamily: "purple",
     colors: {
-      primary: "#9333ea", // purple-600
-      primaryDark: "#7e22ce", // purple-700
-      primaryLight: "#a855f7", // purple-500
-      secondary: "#5f4c9a",
-      background: "#f0ebf5",
-      surface: "#f9f8fc",
-      surfaceHover: "#f3f2f7",
-      text: "#110d1b",
-      textSecondary: "#5f4c9a",
-      border: "#e5e7eb",
-      borderLight: "#f3f4f6",
-      accent: "#9333ea",
-      accentLight: "#eae7f3",
+      primary: "#7C3AED",
+      primaryDark: "#5B21B6",
+      primaryLight: "#A78BFA",
+      secondary: "#8B5CF6",
+      background: "#F9FAFB",
+      surface: "#F3F0FF",
+      surfaceHover: "#EDE6FF",
+      text: "#1E1B4B",
+      textSecondary: "#6D63A7",
+      border: "#E4E1F7",
+      borderLight: "#F1EEFF",
+      accent: "#7C3AED",
+      accentLight: "#EDE6FF",
       success: "#10b981",
       warning: "#f59e0b",
       error: "#ef4444",
-      cardBg: "#ffffff",
-      cardBorder: "#e5e7eb",
-      inputBg: "#ffffff",
-      inputBorder: "#d1d5db",
-      buttonPrimary: "#9333ea",
-      buttonPrimaryHover: "#7e22ce",
-      buttonSecondary: "#eae7f3",
-      buttonSecondaryHover: "#ddd6f0",
-      sidebar: "#f9f8fc",
-      navbar: "#f0ebf5",
+      cardBg: "#FFFFFF",
+      cardBorder: "#E4E1F7",
+      inputBg: "#F3F0FF",
+      inputBorder: "#D9D4FB",
+      buttonPrimary: "#7C3AED",
+      buttonPrimaryHover: "#5B21B6",
+      buttonSecondary: "#EDE6FF",
+      buttonSecondaryHover: "#E4E1F7",
+      sidebar: "#F3F0FF",
+      navbar: "#FFFFFF",
     },
   },
-  ocean: {
-    name: "Ocean Light",
+
+  // =============================
+  // PURPLE – DARK (Community)
+  // =============================
+  "purple-dark": {
+    name: "Purple",
+    mode: "dark",
+    colorFamily: "purple",
     colors: {
-      primary: "#0ea5e9", // sky-500
-      primaryDark: "#0284c7", // sky-600
-      primaryLight: "#38bdf8", // sky-400
-      secondary: "#0c4a6e",
-      background: "#f5f8fa",
-      surface: "#f0f9ff",
-      surfaceHover: "#e0f2fe",
-      text: "#0c4a6e",
-      textSecondary: "#075985",
-      border: "#e5e7eb",
-      borderLight: "#f3f4f6",
-      accent: "#06b6d4",
-      accentLight: "#cffafe",
+      primary: "#C4B5FD",
+      primaryDark: "#A78BFA",
+      primaryLight: "#DDD6FE",
+      secondary: "#C4B5FD",
+      background: "#14111F",
+      surface: "#1F1A2E",
+      surfaceHover: "#2B2541",
+      text: "#F1EEFF",
+      textSecondary: "#C4B5FD",
+      border: "#2F2750",
+      borderLight: "#3C2F67",
+      accent: "#A78BFA",
+      accentLight: "#261B40",
       success: "#10b981",
       warning: "#f59e0b",
       error: "#ef4444",
-      cardBg: "#ffffff",
-      cardBorder: "#bae6fd",
-      inputBg: "#ffffff",
-      inputBorder: "#7dd3fc",
-      buttonPrimary: "#0ea5e9",
-      buttonPrimaryHover: "#0284c7",
-      buttonSecondary: "#e0f2fe",
-      buttonSecondaryHover: "#bae6fd",
-      sidebar: "#f0f9ff",
-      navbar: "#f5f8fa",
+      cardBg: "#1F1A2E",
+      cardBorder: "#3C2F67",
+      inputBg: "#2B2541",
+      inputBorder: "#5B4C99",
+      buttonPrimary: "#C4B5FD",
+      buttonPrimaryHover: "#A78BFA",
+      buttonSecondary: "#2B2541",
+      buttonSecondaryHover: "#3C2F67",
+      sidebar: "#1F1A2E",
+      navbar: "#14111F",
     },
   },
-  rose: {
-    name: "Rose Light",
+
+  // =============================
+  // BLUE – LIGHT (Community)
+  // =============================
+  "blue-light": {
+    name: "Blue",
+    mode: "light",
+    colorFamily: "blue",
     colors: {
-      primary: "#e11d48", // rose-600
-      primaryDark: "#be123c", // rose-700
-      primaryLight: "#f43f5e", // rose-500
-      secondary: "#881337",
-      background: "#fcfafa",
-      surface: "#fff1f2",
-      surfaceHover: "#ffe4e6",
-      text: "#881337",
-      textSecondary: "#9f1239",
-      border: "#e5e7eb",
-      borderLight: "#f3f4f6",
-      accent: "#ec4899",
-      accentLight: "#fce7f3",
+      primary: "#3B82F6",
+      primaryDark: "#2563EB",
+      primaryLight: "#60A5FA",
+      secondary: "#1D4ED8",
+      background: "#F9FAFB",
+      surface: "#EFF6FF",
+      surfaceHover: "#DBEAFE",
+      text: "#1E3A8A",
+      textSecondary: "#3B82F6",
+      border: "#DBEAFE",
+      borderLight: "#EFF6FF",
+      accent: "#0EA5E9",
+      accentLight: "#E0F2FE",
       success: "#10b981",
       warning: "#f59e0b",
       error: "#ef4444",
-      cardBg: "#ffffff",
-      cardBorder: "#fda4af",
-      inputBg: "#ffffff",
-      inputBorder: "#fb7185",
-      buttonPrimary: "#e11d48",
-      buttonPrimaryHover: "#be123c",
-      buttonSecondary: "#fecdd3",
-      buttonSecondaryHover: "#fda4af",
-      sidebar: "#fff1f2",
-      navbar: "#fcfafa",
+      cardBg: "#FFFFFF",
+      cardBorder: "#DBEAFE",
+      inputBg: "#EFF6FF",
+      inputBorder: "#93C5FD",
+      buttonPrimary: "#3B82F6",
+      buttonPrimaryHover: "#2563EB",
+      buttonSecondary: "#DBEAFE",
+      buttonSecondaryHover: "#BFDBFE",
+      sidebar: "#EFF6FF",
+      navbar: "#FFFFFF",
     },
   },
-  
-  // DARK THEMES
-  midnight: {
-    name: "Midnight Dark",
+
+  // =============================
+  // BLUE – DARK (Community)
+  // =============================
+  "blue-dark": {
+    name: "Blue",
+    mode: "dark",
+    colorFamily: "blue",
     colors: {
-      primary: "#8b5cf6", // violet-500
-      primaryDark: "#7c3aed", // violet-600
-      primaryLight: "#a78bfa", // violet-400
-      secondary: "#a78bfa",
-      background: "#0f172a", // slate-900
-      surface: "#1e293b", // slate-800
-      surfaceHover: "#334155", // slate-700
-      text: "#f1f5f9", // slate-100
-      textSecondary: "#cbd5e1", // slate-300
-      border: "#334155",
-      borderLight: "#475569",
-      accent: "#a855f7",
-      accentLight: "#2e1065",
+      primary: "#60A5FA",
+      primaryDark: "#3B82F6",
+      primaryLight: "#93C5FD",
+      secondary: "#93C5FD",
+      background: "#0A1222",
+      surface: "#142033",
+      surfaceHover: "#1E2D45",
+      text: "#E2E8F0",
+      textSecondary: "#93C5FD",
+      border: "#203556",
+      borderLight: "#2A4268",
+      accent: "#38BDF8",
+      accentLight: "#1A3A4A",
       success: "#10b981",
       warning: "#f59e0b",
       error: "#ef4444",
-      cardBg: "#1e293b",
-      cardBorder: "#475569",
-      inputBg: "#334155",
-      inputBorder: "#475569",
-      buttonPrimary: "#8b5cf6",
-      buttonPrimaryHover: "#7c3aed",
-      buttonSecondary: "#334155",
-      buttonSecondaryHover: "#475569",
-      sidebar: "#1e293b",
-      navbar: "#0f172a",
+      cardBg: "#142033",
+      cardBorder: "#2A4268",
+      inputBg: "#1E2D45",
+      inputBorder: "#3B82F6",
+      buttonPrimary: "#60A5FA",
+      buttonPrimaryHover: "#3B82F6",
+      buttonSecondary: "#1E2D45",
+      buttonSecondaryHover: "#2A4268",
+      sidebar: "#142033",
+      navbar: "#0A1222",
     },
   },
-  forest: {
-    name: "Forest Dark",
+
+  // =============================
+  // GRAY – LIGHT (Community)
+  // =============================
+  "gray-light": {
+  name: "Gray Stone",
+  mode: "light",
+  colorFamily: "gray", // keep the same key, internal use only
+  colors: {
+    primary: "#4B5563",          // stone gray
+    primaryDark: "#374151",
+    primaryLight: "#6B7280",
+
+    secondary: "#6B7280",        // softer text/accents
+
+    background: "#F3F4F6",       // stone-100
+    surface: "#FFFFFF",          // clean white cards
+    surfaceHover: "#F1F1F3",
+
+    text: "#1F2937",             // charcoal
+    textSecondary: "#6B7280",
+
+    border: "#D1D5DB",
+    borderLight: "#E5E7EB",
+
+    accent: "#7F8287",           // muted warm-stone accent
+    accentLight: "#E5E7EB",
+
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+
+    cardBg: "#FFFFFF",
+    cardBorder: "#D1D5DB",
+
+    inputBg: "#FFFFFF",
+    inputBorder: "#D1D5DB",
+
+    buttonPrimary: "#4B5563",
+    buttonPrimaryHover: "#374151",
+
+    buttonSecondary: "#E5E7EB",
+    buttonSecondaryHover: "#D1D5DB",
+
+    sidebar: "#FFFFFF",
+    navbar: "#FFFFFF",
+  },
+},
+
+
+  // =============================
+  // GRAY – DARK (Community)
+  // =============================
+  "gray-dark": {
+  name: "Gray Stone",
+  mode: "dark",
+  colorFamily: "gray",
+  colors: {
+    primary: "#9CA3AF",          // light stone for visibility
+    primaryDark: "#6B7280",
+    primaryLight: "#D1D5DB",
+
+    secondary: "#D1D5DB",
+
+    background: "#111827",       // charcoal blue-gray
+    surface: "#1F2937",          // mid-stone
+    surfaceHover: "#2B3544",
+
+    text: "#F3F4F6",             // near-white stone
+    textSecondary: "#9CA3AF",
+
+    border: "#374151",
+    borderLight: "#4B5563",
+
+    accent: "#6B7280",
+    accentLight: "#374151",
+
+    success: "#10B981",
+    warning: "#F59E0B",
+    error: "#EF4444",
+
+    cardBg: "#1F2937",
+    cardBorder: "#374151",
+
+    inputBg: "#2B3544",
+    inputBorder: "#6B7280",
+
+    buttonPrimary: "#9CA3AF",
+    buttonPrimaryHover: "#D1D5DB",
+
+    buttonSecondary: "#2B3544",
+    buttonSecondaryHover: "#4B5563",
+
+    sidebar: "#1F2937",
+    navbar: "#111827",
+  },
+},
+
+
+
+  // =============================
+  // PINK – LIGHT (Community)
+  // =============================
+  "pink-light": {
+    name: "Pink",
+    mode: "light",
+    colorFamily: "pink",
     colors: {
-      primary: "#10b981", // emerald-500
-      primaryDark: "#059669", // emerald-600
-      primaryLight: "#34d399", // emerald-400
-      secondary: "#34d399",
-      background: "#02120e", // very dark green
-      surface: "#064e3b", // emerald-900
-      surfaceHover: "#065f46", // emerald-800
-      text: "#d1fae5", // emerald-100
-      textSecondary: "#a7f3d0", // emerald-200
-      border: "#065f46",
-      borderLight: "#047857",
-      accent: "#14b8a6",
-      accentLight: "#134e4a",
-      success: "#10b981",
+      primary: "#E11D48",
+      primaryDark: "#BE123C",
+      primaryLight: "#F43F5E",
+      secondary: "#DB2777",
+      background: "#F9FAFB",
+      surface: "#FFF1F2",
+      surfaceHover: "#FFE4E9",
+      text: "#831843",
+      textSecondary: "#DB2777",
+      border: "#FBCFE8",
+      borderLight: "#FFE4E9",
+      accent: "#EC4899",
+      accentLight: "#FCE7F3",
+      success: "#22C55E",
       warning: "#f59e0b",
       error: "#ef4444",
-      cardBg: "#064e3b",
-      cardBorder: "#047857",
-      inputBg: "#065f46",
-      inputBorder: "#047857",
-      buttonPrimary: "#10b981",
-      buttonPrimaryHover: "#059669",
-      buttonSecondary: "#065f46",
-      buttonSecondaryHover: "#047857",
-      sidebar: "#064e3b",
-      navbar: "#02120e",
+      cardBg: "#FFFFFF",
+      cardBorder: "#FBCFE8",
+      inputBg: "#FFF1F2",
+      inputBorder: "#FDA4AF",
+      buttonPrimary: "#E11D48",
+      buttonPrimaryHover: "#BE123C",
+      buttonSecondary: "#FFE4E9",
+      buttonSecondaryHover: "#FBCFE8",
+      sidebar: "#FFF1F2",
+      navbar: "#FFFFFF",
     },
   },
-  sunset: {
-    name: "Sunset Dark",
+
+  // =============================
+  // PINK – DARK (Community)
+  // =============================
+  "pink-dark": {
+    name: "Pink",
+    mode: "dark",
+    colorFamily: "pink",
     colors: {
-      primary: "#f97316", // orange-500
-      primaryDark: "#ea580c", // orange-600
-      primaryLight: "#fb923c", // orange-400
-      secondary: "#fb923c",
-      background: "#1c0f08", // very dark brown
-      surface: "#431407", // orange-950
-      surfaceHover: "#7c2d12", // orange-900
-      text: "#fed7aa", // orange-200
-      textSecondary: "#fdba74", // orange-300
-      border: "#7c2d12",
-      borderLight: "#9a3412",
-      accent: "#f59e0b",
-      accentLight: "#78350f",
-      success: "#10b981",
+      primary: "#F472B6",
+      primaryDark: "#EC4899",
+      primaryLight: "#F9A8D4",
+      secondary: "#F9A8D4",
+      background: "#1A0A12",
+      surface: "#2A1020",
+      surfaceHover: "#44172D",
+      text: "#FCE7F3",
+      textSecondary: "#F9A8D4",
+      border: "#44172D",
+      borderLight: "#6B2140",
+      accent: "#EC4899",
+      accentLight: "#421128",
+      success: "#22C55E",
       warning: "#f59e0b",
       error: "#ef4444",
-      cardBg: "#431407",
-      cardBorder: "#9a3412",
-      inputBg: "#7c2d12",
-      inputBorder: "#9a3412",
-      buttonPrimary: "#f97316",
-      buttonPrimaryHover: "#ea580c",
-      buttonSecondary: "#7c2d12",
-      buttonSecondaryHover: "#9a3412",
-      sidebar: "#431407",
-      navbar: "#1c0f08",
+      cardBg: "#2A1020",
+      cardBorder: "#6B2140",
+      inputBg: "#44172D",
+      inputBorder: "#DB2777",
+      buttonPrimary: "#F472B6",
+      buttonPrimaryHover: "#EC4899",
+      buttonSecondary: "#44172D",
+      buttonSecondaryHover: "#6B2140",
+      sidebar: "#2A1020",
+      navbar: "#1A0A12",
     },
   },
 };
 
 export const themeNames = Object.keys(themes);
-export const defaultTheme = "purple";
+export const colorFamilies = ["purple", "blue", "green", "pink"] as const;
+export type ColorFamily = (typeof colorFamilies)[number];
+export const defaultTheme = "purple-light";

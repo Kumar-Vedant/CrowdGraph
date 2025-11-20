@@ -55,7 +55,7 @@ interface NodeProposal {
   name: string;
   properties: { key: string; value: any }[]
   userId: string;
-  userName?: string;
+  username?: string;
   communityId?: string;
   createdAt: Date;
   upvotes: number;
@@ -68,7 +68,7 @@ interface EdgeProposal {
   type: string;
   properties: { key: string; value: any }[];
   userId: string;
-  userName?: string;
+  username?: string;
   communityId?: string;
   createdAt: Date;
   upvotes: number;

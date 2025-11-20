@@ -3,7 +3,10 @@ import ForceGraph2D from "react-force-graph-2d";
 import { dummyNodes, dummyEdges } from "../../services/data";
 import { useTheme } from "@/context/ThemeContext";
 
-const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
+const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> = ({ 
+  onExpand, 
+  isExpanded = false 
+}) => {
   const fgRef = useRef<any>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const infoRef = useRef<HTMLDivElement>(null);
@@ -12,14 +15,19 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
   const [isZoomedIn, setIsZoomedIn] = useState(false);
   const { theme } = useTheme();
 
+  // Responsive sizing: adapt based on container size
+  const isSmall = dimensions.width < 500;
+  
   // Get theme-based colors
   const NODE_COLOR = theme.colors.primary;
-  const NODE_SIZE = 10;
+  const NODE_SIZE = isSmall ? 6 : 10;
   const LINK_COLOR = theme.colors.border;
-  const LINK_WIDTH = 2;
-  const LINK_DISTANCE = 150;
+  const LINK_WIDTH = isSmall ? 1 : 2;
+  const LINK_DISTANCE = isSmall ? 100 : 150;
   const TEXT_COLOR = theme.colors.text;
   const BACKGROUND_COLOR = theme.colors.background;
+  const LABEL_FONT_SIZE = isSmall ? 8 : 11;
+  const EDGE_LABEL_FONT_SIZE = isSmall ? 6 : 9;
 
   // Build data
   const graphData = useMemo(
@@ -41,7 +49,7 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
         width: LINK_WIDTH,
       })),
     }),
-    [NODE_COLOR, LINK_COLOR]
+    [NODE_COLOR, LINK_COLOR, LINK_WIDTH]
   );
 
   // Track container dimensions
@@ -65,12 +73,12 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
     const timer = setTimeout(() => {
       if (fgRef.current) {
         fgRef.current.d3Force("link")?.distance(LINK_DISTANCE);
-        fgRef.current.d3Force("charge")?.strength(-150);
-        fgRef.current.zoomToFit(400, 50);
+        fgRef.current.d3Force("charge")?.strength(isSmall ? -80 : -150);
+        fgRef.current.zoomToFit(isSmall ? 300 : 400, isSmall ? -50 : -100);
       }
     }, 600);
     return () => clearTimeout(timer);
-  }, [dimensions]);
+  }, [dimensions, LINK_DISTANCE, isSmall]);
 
   // Tooltip follows mouse
   useEffect(() => {
@@ -84,43 +92,79 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
     return () => window.removeEventListener("mousemove", move);
   }, []);
 
+  // Close info box
+  const closeInfo = () => {
+    const info = infoRef.current;
+    if (info) {
+      info.style.opacity = "0";
+      info.style.pointerEvents = "none";
+    }
+  };
+
   // Show info box (no React state)
-  const showInfo = (title: string, type: string, id: string, details: any[]) => {
+  const showInfo = (
+    title: string,
+    type: string,
+    id: string,
+    details: any[]
+  ) => {
     const info = infoRef.current;
     if (!info) return;
 
     const html = `
-      <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px;color:${theme.colors.primary};">${title}</div>
-      <div style="color:${theme.colors.textSecondary};font-size:0.85rem;margin-bottom:4px;"><span style="font-weight:600;">Type:</span> ${type}</div>
-      <div style="color:${theme.colors.textSecondary};font-size:0.8rem;margin-bottom:8px;"><span style="font-weight:600;">ID:</span> <span style="color:${theme.colors.text};font-family:monospace;">${id}</span></div>
-      <hr style="border:none;border-top:1px solid ${theme.colors.border};margin:8px 0;" />
-      ${details && details.length > 0 ? details
-        .map(
-          (p) =>
-            `<div style="margin-bottom:6px;padding:4px 0;"><strong style="color:${theme.colors.text};">${p.key}:</strong> <span style="color:${theme.colors.textSecondary};margin-left:4px;">${p.value}</span></div>`
-        )
-        .join("") : `<div style="color:${theme.colors.textSecondary};font-style:italic;margin:8px 0;">No properties</div>`}
-      <button id="closeInfoBtn" style="margin-top:12px;background:${theme.colors.primary};border:none;color:${theme.colors.background};border-radius:8px;padding:8px 12px;cursor:pointer;width:100%;font-weight:600;font-size:0.875rem;transition:all 0.2s;">Close</button>
+      <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px;color:${
+        theme.colors.primary
+      };">${title}</div>
+      <div style="color:${
+        theme.colors.textSecondary
+      };font-size:0.85rem;margin-bottom:4px;"><span style="font-weight:600;">Type:</span> ${type}</div>
+      <div style="color:${
+        theme.colors.textSecondary
+      };font-size:0.8rem;margin-bottom:8px;"><span style="font-weight:600;">ID:</span> <span style="color:${
+      theme.colors.text
+    };font-family:monospace;">${id}</span></div>
+      <hr style="border:none;border-top:1px solid ${
+        theme.colors.border
+      };margin:8px 0;" />
+      ${
+        details && details.length > 0
+          ? details
+              .map(
+                (p) =>
+                  `<div style="margin-bottom:6px;padding:4px 0;"><strong style="color:${theme.colors.text};">${p.key}:</strong> <span style="color:${theme.colors.textSecondary};margin-left:4px;">${p.value}</span></div>`
+              )
+              .join("")
+          : `<div style="color:${theme.colors.textSecondary};font-style:italic;margin:8px 0;">No properties</div>`
+      }
+      <button id="closeInfoBtn" style="margin-top:12px;background:${
+        theme.colors.primary
+      };border:none;color:${
+      theme.colors.background
+    };border-radius:8px;padding:8px 12px;cursor:pointer;width:100%;font-weight:600;font-size:0.875rem;transition:all 0.2s;">Close</button>
     `;
 
     info.innerHTML = html;
     info.style.opacity = "1";
     info.style.pointerEvents = "auto";
 
-    // Close button handler
-    const closeBtn = document.getElementById("closeInfoBtn");
-    if (closeBtn) {
-      closeBtn.onmouseover = () => {
-        closeBtn.style.background = theme.colors.primaryLight || theme.colors.primary;
-      };
-      closeBtn.onmouseout = () => {
-        closeBtn.style.background = theme.colors.primary;
-      };
-      closeBtn.onclick = () => {
-        info.style.opacity = "0";
-        info.style.pointerEvents = "none";
-      };
-    }
+    // Close button handler - use setTimeout to ensure DOM is updated
+    setTimeout(() => {
+      const closeBtn = info.querySelector("#closeInfoBtn");
+      if (closeBtn) {
+        closeBtn.addEventListener("mouseover", () => {
+          (closeBtn as HTMLElement).style.background =
+            theme.colors.primaryLight || theme.colors.primary;
+        });
+        closeBtn.addEventListener("mouseout", () => {
+          (closeBtn as HTMLElement).style.background = theme.colors.primary;
+        });
+        closeBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          closeInfo();
+        });
+      }
+    }, 0);
   };
 
   // Memoized graph (static render)
@@ -138,47 +182,69 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
         enableNodeDrag={true}
         cooldownTicks={0}
         nodeLabel={() => ""}
-        onNodeHover={(node) => {
-          const tooltip = tooltipRef.current;
-          if (tooltip) {
-            tooltip.style.opacity = node ? "1" : "0";
-            tooltip.innerHTML = node?.label || "";
-          }
-        }}
-        onLinkHover={(link) => {
-          const tooltip = tooltipRef.current;
-          if (tooltip) {
-            tooltip.style.opacity = link ? "1" : "0";
-            tooltip.innerHTML = link?.label || "";
-          }
+        nodePointerAreaPaint={(node: any, color, ctx, globalScale) => {
+          const radius = NODE_SIZE / globalScale;
+          ctx.beginPath();
+          ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+          ctx.fillStyle = color;
+          ctx.fill();
         }}
         onNodeClick={(node) =>
-          showInfo(node.label, node.group, node.id || '', node.details)
+          showInfo(node.label, node.group, node.id || "", node.details)
         }
         onLinkClick={(link) =>
-          showInfo(link.label, "Edge", link.id || '', link.details)
+          showInfo(link.label, "Edge", link.id || "", link.details)
         }
+        onNodeHover={(node) => {
+          if (node) {
+            tooltipRef.current?.setAttribute("data-visible", "true");
+          } else {
+            tooltipRef.current?.removeAttribute("data-visible");
+          }
+        }}
         nodeCanvasObject={(node: any, ctx, globalScale) => {
           if (!node || typeof node.x !== "number" || typeof node.y !== "number")
             return;
+          
           const radius = NODE_SIZE / globalScale;
+          
+          // Draw node circle
           ctx.beginPath();
           ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
           ctx.fillStyle = NODE_COLOR;
           ctx.fill();
+          
+          // Draw subtle glow effect
+          ctx.strokeStyle = `${NODE_COLOR}44`;
+          ctx.lineWidth = 0.5 / globalScale;
+          ctx.stroke();
 
-          const fontSize = 11 / globalScale;
-          ctx.font = `bold ${fontSize}px Sans-Serif`;
-          ctx.textAlign = "left";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = TEXT_COLOR;
-          ctx.fillText(node.label, node.x + radius + 0.5, node.y + radius + 0.5);
+          // Draw label - only on large view or if zoomed in
+          if (!isSmall || isZoomedIn) {
+            const fontSize = LABEL_FONT_SIZE / globalScale;
+            ctx.font = `bold ${fontSize}px Sans-Serif`;
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = TEXT_COLOR;
+            
+            // Truncate label if too long for small view
+            let displayLabel = node.label;
+            if (isSmall && node.label.length > 10) {
+              displayLabel = node.label.substring(0, 8) + "...";
+            }
+            
+            ctx.fillText(
+              displayLabel,
+              node.x + radius + 0.5,
+              node.y + radius + 0.5
+            );
+          }
         }}
         linkCanvasObject={(link: any, ctx, globalScale) => {
           if (!link.source || !link.target) return;
           const { x: x1, y: y1 } = link.source;
           const { x: x2, y: y2 } = link.target;
-          
+
           ctx.strokeStyle = LINK_COLOR;
           ctx.lineWidth = LINK_WIDTH / globalScale;
           ctx.beginPath();
@@ -186,38 +252,48 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
           ctx.lineTo(x2, y2);
           ctx.stroke();
 
-          // Draw edge label in the middle of the line
-          const midX = (x1 + x2) / 2;
-          const midY = (y1 + y2) / 2;
-          const fontSize = 9 / globalScale;
-          ctx.font = `${fontSize}px Sans-Serif`;
-          ctx.textAlign = "center";
-          ctx.textBaseline = "middle";
-          ctx.fillStyle = TEXT_COLOR;
-          ctx.fillText(link.label, midX, midY);
+          // Draw edge label only on expanded view or if focused
+          if (isExpanded || isZoomedIn) {
+            const midX = (x1 + x2) / 2;
+            const midY = (y1 + y2) / 2;
+            const fontSize = EDGE_LABEL_FONT_SIZE / globalScale;
+            ctx.font = `${fontSize}px Sans-Serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillStyle = TEXT_COLOR;
+            ctx.fillText(link.label, midX, midY);
+          }
         }}
       />
     ),
-    [graphData, dimensions, NODE_COLOR, LINK_COLOR, TEXT_COLOR]
+    [graphData, dimensions, NODE_COLOR, LINK_COLOR, TEXT_COLOR, isSmall, isZoomedIn, isExpanded, LABEL_FONT_SIZE, EDGE_LABEL_FONT_SIZE]
   );
 
   // Center and zoom toggle
   const handleCenterGraph = () => {
     if (!fgRef.current) return;
-    
+
     if (isZoomedIn) {
       // Zoom out - fit entire graph
-      fgRef.current.zoomToFit(400, 50);
+      fgRef.current.zoomToFit(isSmall ? 300 : 400, isSmall ? -50 : -100);
       setIsZoomedIn(false);
     } else {
       // Zoom in to center
-      const width = dimensions.width;
-      const height = dimensions.height;
       fgRef.current.centerAt(0, 0, 300);
-      fgRef.current.zoom(16, 300);
+      fgRef.current.zoom(isSmall ? 12 : 16, 300);
       setIsZoomedIn(true);
     }
   };
+
+  const handleResetView = () => {
+    if (!fgRef.current) return;
+    setIsZoomedIn(false);
+    fgRef.current.zoomToFit(isSmall ? 300 : 400, isSmall ? -50 : -100);
+  };
+
+  // Responsive button sizing
+  const buttonSize = isSmall ? "40px" : "48px";
+  const buttonFontSize = isSmall ? "0.9rem" : "1.2rem";
 
   return (
     <div
@@ -229,6 +305,8 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
         position: "relative",
         borderRadius: "8px",
         overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {/* Tooltip */}
@@ -240,9 +318,9 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
           pointerEvents: "none",
           background: `${theme.colors.primary}dd`,
           color: "#fff",
-          padding: "8px 12px",
+          padding: isSmall ? "6px 10px" : "8px 12px",
           borderRadius: "8px",
-          fontSize: "0.875rem",
+          fontSize: isSmall ? "0.75rem" : "0.875rem",
           fontWeight: "600",
           boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
           transition: "opacity 0.15s ease",
@@ -254,91 +332,149 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
         }}
       />
 
-      {/* Info Box */}
+      {/* Info Box - Responsive positioning */}
       <div
         ref={infoRef}
         style={{
           position: "absolute",
-          top: 16,
-          right: 16,
+          top: isSmall ? 8 : 16,
+          right: isSmall ? 8 : 16,
           background: `${theme.colors.cardBg}f0`,
           backdropFilter: "blur(10px)",
           color: theme.colors.text,
-          padding: "16px",
+          padding: isSmall ? "12px" : "16px",
           borderRadius: "12px",
-          minWidth: "240px",
-          maxWidth: "320px",
+          minWidth: isSmall ? "200px" : "240px",
+          maxWidth: isSmall ? "250px" : "320px",
+          maxHeight: isSmall ? "300px" : "400px",
+          overflowY: "auto",
           border: `1px solid ${theme.colors.border}`,
           boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
           transition: "opacity 0.25s ease",
           opacity: 0,
           pointerEvents: "none",
           zIndex: 50,
+          fontSize: isSmall ? "0.75rem" : "0.875rem",
         }}
       />
 
-      {/* Center Button */}
-      <button
-        onClick={handleCenterGraph}
+      {/* Graph Container */}
+      <div style={{ flex: 1, position: "relative", overflow: "hidden" }}>
+        {graph}
+      </div>
+
+      {/* Control Bar - Bottom */}
+      <div
         style={{
           position: "absolute",
-          bottom: 20,
-          left: 20,
-          background: theme.colors.primary,
-          color: theme.colors.background,
-          border: "none",
-          borderRadius: "50%",
-          width: "48px",
-          height: "48px",
-          cursor: "pointer",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+          bottom: isSmall ? 12 : 20,
+          left: isSmall ? 12 : 20,
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: "1.2rem",
-          fontWeight: "bold",
-          transition: "all 0.2s ease",
+          gap: isSmall ? 8 : 12,
           zIndex: 50,
+          flexWrap: "wrap",
         }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = theme.colors.primaryLight || theme.colors.primary;
-          e.currentTarget.style.transform = "scale(1.05)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = theme.colors.primary;
-          e.currentTarget.style.transform = "scale(1)";
-        }}
-        title={isZoomedIn ? "Zoom Out" : "Zoom In at Center"}
       >
-        {isZoomedIn ? "−" : "+"}
-      </button>
-
-      {/* Expand Button */}
-      {onExpand && (
+        {/* Reset View Button */}
         <button
-          onClick={onExpand}
+          onClick={handleResetView}
           style={{
-            position: "absolute",
-            bottom: 20,
-            right: 20,
             background: theme.colors.primary,
             color: theme.colors.background,
             border: "none",
             borderRadius: "50%",
-            width: "48px",
-            height: "48px",
+            width: buttonSize,
+            height: buttonSize,
             cursor: "pointer",
             boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            fontSize: "1.2rem",
+            fontSize: buttonFontSize,
             fontWeight: "bold",
             transition: "all 0.2s ease",
+            padding: 0,
+            minWidth: buttonSize,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background =
+              theme.colors.primaryLight || theme.colors.primary;
+            e.currentTarget.style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = theme.colors.primary;
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+          title="Reset view"
+        >
+          ↺
+        </button>
+
+        {/* Zoom Toggle Button */}
+        <button
+          onClick={handleCenterGraph}
+          style={{
+            background: theme.colors.primary,
+            color: theme.colors.background,
+            border: "none",
+            borderRadius: "50%",
+            width: buttonSize,
+            height: buttonSize,
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: buttonFontSize,
+            fontWeight: "bold",
+            transition: "all 0.2s ease",
+            padding: 0,
+            minWidth: buttonSize,
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background =
+              theme.colors.primaryLight || theme.colors.primary;
+            e.currentTarget.style.transform = "scale(1.05)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = theme.colors.primary;
+            e.currentTarget.style.transform = "scale(1)";
+          }}
+          title={isZoomedIn ? "Zoom Out" : "Zoom In at Center"}
+        >
+          {isZoomedIn ? "−" : "+"}
+        </button>
+      </div>
+
+      {/* Expand Button - Bottom Right */}
+      {onExpand && !isExpanded && (
+        <button
+          onClick={onExpand}
+          style={{
+            position: "absolute",
+            bottom: isSmall ? 12 : 20,
+            right: isSmall ? 12 : 20,
+            background: theme.colors.primary,
+            color: theme.colors.background,
+            border: "none",
+            borderRadius: "50%",
+            width: buttonSize,
+            height: buttonSize,
+            cursor: "pointer",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: buttonFontSize,
+            fontWeight: "bold",
+            transition: "all 0.2s ease",
+            padding: 0,
+            minWidth: buttonSize,
             zIndex: 50,
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.background = theme.colors.primaryLight || theme.colors.primary;
+            e.currentTarget.style.background =
+              theme.colors.primaryLight || theme.colors.primary;
             e.currentTarget.style.transform = "scale(1.05)";
           }}
           onMouseLeave={(e) => {
@@ -349,8 +485,8 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="24px"
-            height="24px"
+            width={isSmall ? "18px" : "24px"}
+            height={isSmall ? "18px" : "24px"}
             fill="currentColor"
             viewBox="0 0 256 256"
           >
@@ -359,13 +495,29 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void }> = ({ onExpand }) => {
         </button>
       )}
 
-      {graph}
+      {/* Info Indicator for small view */}
+      {isSmall && !isExpanded && (
+        <div
+          style={{
+            position: "absolute",
+            top: isSmall ? 8 : 12,
+            left: isSmall ? 8 : 12,
+            background: `${theme.colors.primary}22`,
+            color: theme.colors.primary,
+            padding: "4px 8px",
+            borderRadius: "6px",
+            fontSize: "0.7rem",
+            fontWeight: "600",
+            pointerEvents: "none",
+            zIndex: 30,
+            border: `1px solid ${theme.colors.primary}44`,
+          }}
+        >
+          Click nodes to explore
+        </div>
+      )}
     </div>
   );
 };
 
 export default KnowledgeGraph;
-
-
-
-

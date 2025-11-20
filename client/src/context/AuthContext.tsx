@@ -1,6 +1,6 @@
-import React, { createContext, useState, useContext, type ReactNode, use } from "react";
+import React, { createContext, useState, useContext, type ReactNode } from "react";
 import type { User } from "@/schema/index";
-import { Navigate, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 
 // Define the shape of the context
 interface AuthContextType {

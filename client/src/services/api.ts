@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { dummyEdgeProposals, dummyNodeProposals } from './data';
+import { dummyEdgeProposals } from './data';
 
 const BASE_URL = "https://crowdgraph.onrender.com"
 
@@ -176,23 +176,65 @@ export const getCommunitiesOfUser = async (userId: string) => {
 // get all nodes and edges in community by community id
 export const getGraphInCommunity = async (communityId: string) => {
     const response = await axios.get(`${BASE_URL}/graph/${communityId}/community`);
-    console.log("Graph in community:", response.data);
+    return response.data;
+}
+
+// get all node proposals in community by community id
+export const getNodeProposalsInCommunity = async (communityId: string) => {
+    const response = await axios.get(`${BASE_URL}/node/${communityId}/proposal`);
     return response.data;
 }
 
 // get all nodes and edges proposals in community by community id
 export const getGraphProposalsInCommunity = async (communityId: string) => {
+    const nodesResponse = await getNodeProposalsInCommunity(communityId);
     const response = {
         data: {
             success: true,
             data: {
-                nodeProposals: dummyNodeProposals,
+                nodeProposals: nodesResponse?.data,
                 edgeProposals: dummyEdgeProposals
             },
             error: null
         }
     };
     // const response = await axios.get(`${BASE_URL}/graph/proposals/${communityId}/community`);
-    console.log("Graph proposals in community:", response.data);
+    return response.data;
+}
+
+export const voteNodeProposal = async (
+  proposalId: string,
+  vote: number,
+  userId: string
+) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/node/proposal/vote`, {
+      proposalId,
+      voteValue: vote,
+      userId,
+    });
+    return response.data;
+  } catch (err: any) {
+    return err.response?.data;
+  }
+};
+
+// vote a edge proposal with upvote or downvote or none as +1 or -1 or 0
+export const voteEdgeProposal = async (proposalId: string, vote: number, userId: string) => {
+    const response = await axios.post(`${BASE_URL}/edge/proposal/vote`, {
+        proposalId: proposalId,
+        voteValue: vote,
+        userId: userId,
+    });
+    return response.data;
+}
+
+
+///////////////////////////// Query Management /////////////////////////////
+// query knowledge graph with a question in community
+export const queryKnowledgeGraph = async (communityId: string, question: string) => {
+    const response = await axios.post(`${BASE_URL}/query/${communityId}/community`, {
+        question,
+    });
     return response.data;
 }
