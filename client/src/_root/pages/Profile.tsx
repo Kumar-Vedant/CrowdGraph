@@ -5,7 +5,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { useApi } from "@/hooks/apiHook";
 import { getCommunitiesOfUser } from "@/services/api";
 import type { Community } from "@/schema";
-import { themes } from "@/theme/themes";
 
 function Profile() {
   const { user } = useAuth();
@@ -266,7 +265,7 @@ const Settings = ({ user }: { user: any }) => {
     { color: 'purple', label: 'Purple', primary: '#9333ea', secondary: '#c084fc', accent: '#a855f7' },
     { color: 'blue', label: 'Blue', primary: '#0ea5e9', secondary: '#0c4a6e', accent: '#06b6d4' },
     { color: 'gray', label: 'Gray Stone', primary: '#4B5563', secondary: '#6B7280', accent: '#7F8287' },
-    { color: 'pink', label: 'Pink', primary: '#ec4899', secondary: '#be185d', accent: '#f472b6' },
+    { color: 'pink', label: 'Pink/Orange', primary: '#ec4899', secondary: '#be185d', accent: '#f472b6' },
   ];
   
   return (
@@ -385,12 +384,6 @@ const Settings = ({ user }: { user: any }) => {
             </span>
             <span className="text-xs text-muted-foreground ml-auto">Use the navbar toggle to switch</span>
           </div>
-        </div>
-
-        <div className="flex gap-3 mt-3">
-          <button className="bg-primary hover:bg-primary/90 text-white text-sm px-4 py-2 rounded-lg transition">
-            Save Changes
-          </button>
         </div>
       </div>
     </div>

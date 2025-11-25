@@ -5,7 +5,6 @@ import { toast } from "sonner";
 function Signup() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: "",
     username: "",
     password: "",
     confirmPassword: "",
@@ -33,7 +32,6 @@ function Signup() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: formData.email,
           username: formData.username,
           password: formData.password,
         }),
@@ -64,24 +62,6 @@ function Signup() {
           <h2 className="text-foreground tracking-light text-xl sm:text-2xl md:text-[28px] font-bold leading-tight px-4 text-center pb-3 pt-5">
             Sign up for CrowdGraph
           </h2>
-
-          {/* Email */}
-          <div className="flex w-full sm:w-5/6 md:w-2/3 flex-wrap items-end gap-4 px-4 py-3">
-            <label className="flex flex-col min-w-40 flex-1">
-              <p className="text-foreground text-sm sm:text-base font-medium leading-normal pb-2">
-                Email
-              </p>
-              <input
-                type="email"
-                name="email"
-                placeholder="Enter your email"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-foreground focus:outline-0 focus:ring-0 border border-border bg-muted focus:border-border h-14 placeholder:text-muted-foreground p-[15px] text-base font-normal leading-normal"
-              />
-            </label>
-          </div>
 
           {/* Username */}
           <div className="flex w-full sm:w-5/6 md:w-2/3 flex-wrap items-end gap-4 px-4 py-3">

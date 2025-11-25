@@ -7,7 +7,7 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [formData, setFormData] = useState({
-    emailOrUsername: "",
+    username: "",
     password: "",
   });
 
@@ -39,13 +39,13 @@ function Login() {
           <div className="flex w-full sm:w-5/6 md:w-2/3 flex-wrap items-end gap-4 px-4 py-3">
             <label className="flex flex-col min-w-40 flex-1">
               <p className="text-foreground text-sm sm:text-base font-medium leading-normal pb-2">
-                Email or Username
+                Username
               </p>
               <input
                 type="text"
-                name="emailOrUsername"
-                placeholder="Enter your email or username"
-                value={formData.emailOrUsername}
+                name="username"
+                placeholder="Enter your username"
+                value={formData.username}
                 onChange={handleChange}
                 required
                 className="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-foreground focus:outline-0 focus:ring-0 border border-border bg-muted focus:border-border h-14 placeholder:text-muted-foreground p-[15px] text-base font-normal leading-normal"
