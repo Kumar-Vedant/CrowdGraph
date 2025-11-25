@@ -50,6 +50,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
   const [replies, setReplies] = useState<Record<string, Comment[]>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
   const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
+  const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>({});
   const [showReplyBox, setShowReplyBox] = useState<Record<string, boolean>>({});
   const [commentText, setCommentText] = useState<Record<string, string>>({});
   const [newPostTitle, setNewPostTitle] = useState("");
@@ -290,6 +291,15 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
     }
   };
 
+  const MAX_CONTENT_LENGTH = 300;
+
+  const truncateContent = (content: string, isExpanded: boolean) => {
+    if (isExpanded || content.length <= MAX_CONTENT_LENGTH) {
+      return content;
+    }
+    return content.substring(0, MAX_CONTENT_LENGTH) + "...";
+  };
+
   const handleSearch = async (query: string) => {
     setSearchQuery(query);
     if (!query.trim()) {
@@ -315,52 +325,55 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
     const hasReplies = expandedReplies[comment.id];
     const isReplyBoxVisible = showReplyBox[comment.id];
     const isAuthor = user?.id === comment.userId;
+    const isReply = depth > 0;
+    const fontSize = isReply ? "text-xs" : "text-sm";
+    const textColor = isReply ? "text-muted-foreground" : "text-foreground";
     
     return (
       <div
         key={comment.id}
-        className={`ml-${depth * 4} mt-3 border-l border-border pl-3`}
+        className={`ml-${depth * 3} mt-1.5 border-l border-border/50 pl-2`}
       >
-        <div className="bg-muted rounded-md p-3 hover:bg-muted/80 transition">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <p className="font-semibold text-sm text-foreground">{comment.username || "Unknown User"}</p>
-              <p className="text-foreground text-sm mt-1">{comment.content}</p>
+        <div className="bg-transparent rounded-md p-0 hover:bg-muted/30 transition">
+          <div className="flex items-start justify-between gap-1">
+            <div className="flex-1 min-w-0">
+              <p className={`font-semibold ${fontSize} ${textColor}`}>{comment.username || "Unknown User"}</p>
+              <p className={`${textColor} ${fontSize} mt-0.5`}>{comment.content}</p>
             </div>
             {isAuthor && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <MoreVertical size={16} />
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0">
+                    <MoreVertical size={14} />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => handleEditComment(comment)} className="cursor-pointer">
-                    <Pencil size={14} className="mr-2" />
+                  <DropdownMenuItem onClick={() => handleEditComment(comment)} className="cursor-pointer text-xs">
+                    <Pencil size={12} className="mr-2" />
                     Edit
                   </DropdownMenuItem>
                   <DropdownMenuItem 
                     onClick={() => setDeleteConfirmComment(comment)} 
-                    className="cursor-pointer text-destructive focus:text-destructive"
+                    className="cursor-pointer text-destructive focus:text-destructive text-xs"
                   >
-                    <Trash2 size={14} className="mr-2" />
+                    <Trash2 size={12} className="mr-2" />
                     Delete
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
           </div>
-          <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-            <span>{new Date(comment.createdAt).toLocaleString()}</span>
-            <div className="flex gap-2">
+          <div className="flex items-center justify-between text-xs text-muted-foreground/70 mt-1">
+            <span className="text-xs">{new Date(comment.createdAt).toLocaleString()}</span>
+            <div className="flex gap-1">
               {isMember && (
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => setShowReplyBox((prev) => ({ ...prev, [comment.id]: !prev[comment.id] }))}
-                  className="text-xs flex items-center space-x-1"
+                  className="text-xs flex items-center gap-1 h-6 px-1.5"
                 >
-                  <MessageSquare size={14} />
+                  <MessageSquare size={12} />
                   <span>Reply</span>
                 </Button>
               )}
@@ -368,9 +381,9 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                 variant="ghost"
                 size="sm"
                 onClick={() => toggleReplies(comment.id)}
-                className="text-xs flex items-center space-x-1"
+                className="text-xs flex items-center gap-1 h-6 px-1.5"
               >
-                {hasReplies ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                {hasReplies ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
                 <span>Replies</span>
               </Button>
             </div>
@@ -379,7 +392,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
 
         {/* Reply Input Box - Always under the comment when visible */}
         {isReplyBoxVisible && (
-          <div className="mt-2 ml-6">
+          <div className="mt-1.5 ml-3">
             <Textarea
               placeholder="Write a reply..."
               value={commentText[comment.postId + comment.id] || ""}
@@ -389,15 +402,16 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                   [comment.postId + comment.id]: e.target.value,
                 }))
               }
-              className="min-h-[50px]"
+              className="min-h-10 text-xs"
             />
-            <div className="flex gap-2 mt-1">
+            <div className="flex gap-1.5 mt-1">
               <Button
                 size="sm"
                 variant="secondary"
                 onClick={() => handleAddComment(comment.postId, comment.id)}
+                className="text-xs h-7"
               >
-                Submit Reply
+                Reply
               </Button>
               <Button
                 size="sm"
@@ -406,6 +420,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                   setShowReplyBox((prev) => ({ ...prev, [comment.id]: false }));
                   setCommentText((prev) => ({ ...prev, [comment.postId + comment.id]: "" }));
                 }}
+                className="text-xs h-7"
               >
                 Cancel
               </Button>
@@ -415,7 +430,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
 
         {/* Nested Replies */}
         {hasReplies && (
-          <div className="ml-6 mt-2">
+          <div className="ml-2 mt-1">
             {replies[comment.id]?.map((reply) => renderCommentTree(reply, depth + 1))}
           </div>
         )}
@@ -536,7 +551,20 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
             </CardHeader>
 
             <CardContent className="px-2 sm:px-4">
-              <p className="text-foreground mb-4 text-sm sm:text-base">{post.content}</p>
+              <p className="text-foreground mb-3 text-sm sm:text-base leading-relaxed">
+                {truncateContent(post.content, expandedPosts[post.id])}
+              </p>
+              
+              {post.content.length > MAX_CONTENT_LENGTH && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-primary hover:bg-accent-foreground/30 text-xs sm:text-sm font-semibold mb-3 p-1 h-auto"
+                  onClick={() => setExpandedPosts((prev) => ({ ...prev, [post.id]: !prev[post.id] }))}
+                >
+                  {expandedPosts[post.id] ? "Read less" : "Read more"}
+                </Button>
+              )}
 
               <Button
                 variant="ghost"
@@ -550,15 +578,17 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
               </Button>
 
               {expandedComments[post.id] && (
-                <div className="mt-4">
+                <div className="mt-3">
                   {comments[post.id]?.length ? (
-                    comments[post.id].map((c) => renderCommentTree(c))
+                    <div className="space-y-1">
+                      {comments[post.id].map((c) => renderCommentTree(c))}
+                    </div>
                   ) : (
                     <p className="text-xs sm:text-sm text-muted-foreground">No comments yet.</p>
                   )}
 
                   {isMember ? (
-                    <div className="mt-4">
+                    <div className="mt-3">
                       <Textarea
                         placeholder="Add a comment..."
                         value={commentText[post.id] || ""}
@@ -568,14 +598,14 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                             [post.id]: e.target.value,
                           }))
                         }
-                        className="min-h-[70px] text-sm sm:text-base"
+                        className="min-h-14 text-sm sm:text-base"
                       />
-                      <Button className="mt-2 text-xs sm:text-sm" onClick={() => handleAddComment(post.id)}>
+                      <Button className="mt-1.5 text-xs sm:text-sm" onClick={() => handleAddComment(post.id)}>
                         Comment
                       </Button>
                     </div>
                   ) : (
-                    <div className="mt-4 p-3 sm:p-4 bg-muted border border-border rounded-lg text-center">
+                    <div className="mt-3 p-3 sm:p-4 bg-muted border border-border rounded-lg text-center">
                       <p className="text-xs sm:text-sm text-muted-foreground">
                         <span className="font-semibold">Join this community</span> to comment on posts.
                       </p>
@@ -698,8 +728,3 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
     </div>
   );
 };
-
-
-
-
-

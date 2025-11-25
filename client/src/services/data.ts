@@ -99,7 +99,7 @@ export const dummyEdges: Edge[] = [
 export const dummyNodeProposals: NodeProposal[] = [
   {
     id: "np1",
-    labels: ["Technology", "AI"],
+    labels: ["Technology", "Artificial Intelligence", "ML"],
     name: "Machine Learning Framework",
     properties: [
       { key: "description", value: "A new ML framework for distributed training" },
@@ -108,10 +108,11 @@ export const dummyNodeProposals: NodeProposal[] = [
     userId: "u1",
     username: "Lakshay LK",
     communityId: "1",
-    createdAt: new Date("2025-11-10"),
+    createdAt: new Date("2025-11-23"),
     upvotes: 15,
     downvotes: 2,
     status: "PENDING",
+    proposalType: "CREATE",
   },
   {
     id: "np2",
@@ -128,6 +129,7 @@ export const dummyNodeProposals: NodeProposal[] = [
     upvotes: 8,
     downvotes: 1,
     status: "PENDING",
+    proposalType: "UPDATE",
   },
   {
     id: "np3",
@@ -144,6 +146,7 @@ export const dummyNodeProposals: NodeProposal[] = [
     upvotes: 12,
     downvotes: 3,
     status: "APPROVED",
+    proposalType: "CREATE",
   },
   {
     id: "np4",
@@ -160,6 +163,7 @@ export const dummyNodeProposals: NodeProposal[] = [
     upvotes: 20,
     downvotes: 0,
     status: "PENDING",
+    proposalType: "DELETE",
   },
   {
     id: "np5",
@@ -176,6 +180,7 @@ export const dummyNodeProposals: NodeProposal[] = [
     upvotes: 6,
     downvotes: 4,
     status: "REJECTED",
+    proposalType: "UPDATE",
   },
 ];
 
@@ -198,6 +203,9 @@ export const dummyEdgeProposals: EdgeProposal[] = [
     upvotes: 11,
     downvotes: 1,
     status: "PENDING",
+    sourceId: "n1",
+    targetId: "n2",
+    proposalType: "CREATE",
   },
   {
     id: "ep2",
@@ -213,6 +221,9 @@ export const dummyEdgeProposals: EdgeProposal[] = [
     upvotes: 7,
     downvotes: 2,
     status: "PENDING",
+    sourceId: "n3",
+    targetId: "n4",
+    proposalType: "CREATE",
   },
   {
     id: "ep3",
@@ -229,6 +240,9 @@ export const dummyEdgeProposals: EdgeProposal[] = [
     upvotes: 14,
     downvotes: 0,
     status: "APPROVED",
+    sourceId: "n5",
+    targetId: "n6",
+    proposalType: "CREATE",
   },
   {
     id: "ep4",
@@ -244,6 +258,9 @@ export const dummyEdgeProposals: EdgeProposal[] = [
     upvotes: 9,
     downvotes: 1,
     status: "PENDING",
+    sourceId: "n2",
+    targetId: "n7",
+    proposalType: "CREATE",
   },
   {
     id: "ep5",
@@ -259,6 +276,9 @@ export const dummyEdgeProposals: EdgeProposal[] = [
     upvotes: 5,
     downvotes: 3,
     status: "PENDING",
+    sourceId: "n8",
+    targetId: "n9",
+    proposalType: "CREATE",
   },
   {
     id: "ep6",
@@ -274,6 +294,81 @@ export const dummyEdgeProposals: EdgeProposal[] = [
     upvotes: 3,
     downvotes: 5,
     status: "REJECTED",
+    sourceId: "n10",
+    targetId: "n11",
+    proposalType: "CREATE",
+  },
+  // NEW EXTRA PROPOSALS
+  {
+    id: "ep7",
+    type: "EXTENDS",
+    properties: [
+      { key: "parent_model", value: "GPT-4" },
+      { key: "extension", value: "Added multilingual capabilities" },
+    ],
+    userId: "u7",
+    username: "Priya Verma",
+    communityId: "2",
+    createdAt: new Date("2025-11-14"),
+    upvotes: 12,
+    downvotes: 0,
+    status: "PENDING",
+    sourceId: "n12",
+    targetId: "n13",
+    proposalType: "CREATE",
+  },
+  {
+    id: "ep8",
+    type: "EVALUATED_ON",
+    properties: [
+      { key: "metric", value: "Accuracy" },
+      { key: "score", value: "92%" },
+    ],
+    userId: "u8",
+    username: "Kabir Singh",
+    communityId: "2",
+    createdAt: new Date("2025-11-15"),
+    upvotes: 4,
+    downvotes: 1,
+    status: "PENDING",
+    sourceId: "n14",
+    targetId: "n15",
+    proposalType: "CREATE",
+  },
+  {
+    id: "ep9",
+    type: "OPTIMIZED_WITH",
+    properties: [
+      { key: "optimizer", value: "AdamW" },
+      { key: "learning_rate", value: "2e-5" },
+    ],
+    userId: "u9",
+    username: "Harshit Gupta",
+    communityId: "1",
+    createdAt: new Date("2025-11-16"),
+    upvotes: 2,
+    downvotes: 0,
+    status: "PENDING",
+    sourceId: "n16",
+    targetId: "n17",
+    proposalType: "UPDATE",
+  },
+  {
+    id: "ep10",
+    type: "RELATED_TO",
+    properties: [
+      { key: "relation_strength", value: "High" },
+      { key: "reason", value: "Shared training pipeline" },
+    ],
+    userId: "u10",
+    username: "Aditi Rao",
+    communityId: "3",
+    createdAt: new Date("2025-11-17"),
+    upvotes: 10,
+    downvotes: 2,
+    status: "APPROVED",
+    sourceId: "n18",
+    targetId: "n19",
+    proposalType: "DELETE",
   },
 ];
-

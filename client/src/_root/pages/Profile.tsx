@@ -398,8 +398,3 @@ const Settings = ({ user }: { user: any }) => {
 };
 
 export default Profile;
-
-
-
-
-

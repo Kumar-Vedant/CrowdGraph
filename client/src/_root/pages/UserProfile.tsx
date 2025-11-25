@@ -204,9 +204,9 @@ const Overview = ({
                   <div className="flex items-start justify-between gap-2">
                     <h3 className="text-foreground font-semibold text-base sm:text-lg flex-1">{community.title}</h3>
                     <span className={`shrink-0 text-xs font-medium px-2 py-1 rounded-full ${
-                      community.role === "OWNER"
+                      community.role === "Owner"
                         ? "bg-primary/20 text-primary"
-                        : community.role === "ADMIN"
+                        : community.role === "Admin"
                         ? "bg-accent/20 text-accent"
                         : "bg-muted text-muted-foreground"
                     }`}>

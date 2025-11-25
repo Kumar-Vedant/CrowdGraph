@@ -51,29 +51,35 @@ interface Edge {
 
 interface NodeProposal {
   id: string;
-  labels: string[];
-  name: string;
-  properties: { key: string; value: any }[]
   userId: string;
   username?: string;
   communityId?: string;
+  communityName?: string;
+  name: string;
+  labels: string[];
+  properties: { key: string; value: any }[]
+  status: "PENDING" | "APPROVED" | "REJECTED";
   createdAt: Date;
   upvotes: number;
   downvotes: number;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  proposalType: "CREATE" | "UPDATE" | "DELETE";
 }
 
 interface EdgeProposal {
   id: string;
-  type: string;
-  properties: { key: string; value: any }[];
   userId: string;
   username?: string;
   communityId?: string;
+  communityName?: string;
+  type: string;
+  properties: { key: string; value: any }[];
+  status: "PENDING" | "APPROVED" | "REJECTED";
   createdAt: Date;
   upvotes: number;
   downvotes: number;
-  status: "PENDING" | "APPROVED" | "REJECTED";
+  sourceId: string;
+  targetId: string;
+  proposalType: "CREATE" | "UPDATE" | "DELETE";
 }
 
 interface GraphProposals {
