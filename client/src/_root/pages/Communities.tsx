@@ -1,16 +1,36 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import CommunityGrid from "../../components/shared/CommunityGrid";
 import SearchBar from "../../components/shared/SearchBar";
 import type { Community } from "@/schema";
-import { getFeaturedCommunities, searchCommunities } from "@/services/api";
+import { getFeaturedCommunities, searchCommunities, createCommunity } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "sonner";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 function Communities() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const { data: featuredCommunities, loading: loadingFeatured, callApi: callFeaturedCommunities } = useApi(getFeaturedCommunities);
   const { data: searchResults, loading: searchLoading, error: searchError, callApi: callSearchCommunities } = useApi(searchCommunities);
 
   const [communitiesToShow, setCommunitiesToShow] = useState<Community[]>(featuredCommunities || []);
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [communityTitle, setCommunityTitle] = useState<string>("");
+  const [communityDescription, setCommunityDescription] = useState<string>("");
+  const [isCreating, setIsCreating] = useState(false);
   
 
   // Load featured communities on mount
@@ -33,6 +53,52 @@ function Communities() {
       setCommunitiesToShow(searchResults);
     }
   }, [searchResults, searchQuery]);
+
+  // Handle create community
+  const handleCreateCommunity = async () => {
+    if (!user) {
+      toast.error("You must be logged in to create a community!");
+      return;
+    }
+
+    if (!communityTitle.trim()) {
+      toast.error("Community title is required!");
+      return;
+    }
+
+    if (!communityDescription.trim()) {
+      toast.error("Community description is required!");
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      const response = await createCommunity(
+        communityTitle.trim(),
+        communityDescription.trim(),
+        user.id
+      );
+
+      if (response?.success) {
+        toast.success("Community created successfully!");
+        setIsModalOpen(false);
+        setCommunityTitle("");
+        setCommunityDescription("");
+        // Refresh communities list
+        await callFeaturedCommunities();
+        // Navigate to the new community
+        if (response.data?.id) {
+          navigate(`/CommunityDashboard/${response.data.id}`);
+        }
+      } else {
+        toast.error(response?.error || "Failed to create community!");
+      }
+    } catch (error) {
+      toast.error("Error creating community!");
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   return (
     <div className="px-4 sm:px-10 md:px-20 lg:px-40 flex flex-1 justify-center py-5">
@@ -67,6 +133,66 @@ function Communities() {
           <CommunityGrid communities={communitiesToShow} />
         )}
       </div>
+
+      {/* Floating Add Community Button */}
+      {user && (
+        <div className="fixed bottom-6 right-6 sm:bottom-10 sm:right-10 z-40">
+          <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-primary text-white shadow-lg hover:bg-primary/90 transition-all hover:scale-110"
+                onClick={() => setIsModalOpen(true)}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  height="48px"
+                  viewBox="0 -960 960 960"
+                  width="48px"
+                  fill="#fefefe"
+                >
+                  <path d="M450-450H200v-60h250v-250h60v250h250v60H510v250h-60v-250Z" />
+                </svg>
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent className="w-[95vw] sm:max-w-[450px] rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-xl font-semibold">
+                  Create New Community
+                </DialogTitle>
+                <DialogDescription>
+                  Start a new community to share knowledge and collaborate with others.
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <Input
+                  placeholder="Community Title (required)"
+                  value={communityTitle}
+                  onChange={(e) => setCommunityTitle(e.target.value)}
+                  disabled={isCreating}
+                />
+
+                <Textarea
+                  placeholder="Community Description (required)"
+                  value={communityDescription}
+                  onChange={(e) => setCommunityDescription(e.target.value)}
+                  disabled={isCreating}
+                  className="min-h-[100px]"
+                />
+
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90"
+                  onClick={handleCreateCommunity}
+                  disabled={isCreating}
+                >
+                  {isCreating ? "Creating..." : "Create Community"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
     </div>
   );
 }

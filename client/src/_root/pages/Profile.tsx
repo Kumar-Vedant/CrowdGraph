@@ -9,7 +9,9 @@ import type { Community } from "@/schema";
 function Profile() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<"overview" | "contributions" | "settings">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "contributions" | "settings"
+  >("overview");
   const { logout } = useAuth();
 
   // Redirect to login only once (no infinite loop)
@@ -19,7 +21,8 @@ function Profile() {
 
   if (!user) return null;
 
-  const { data: communities, callApi: fetchCommunities } = useApi(getCommunitiesOfUser);
+  const { data: communities, callApi: fetchCommunities } =
+    useApi(getCommunitiesOfUser);
 
   useEffect(() => {
     if (user) {
@@ -40,27 +43,61 @@ function Profile() {
         <div className="flex items-center p-4 @container">
           <div className="flex w-full flex-col gap-4 @[520px]:flex-row @[520px]:justify-between @[520px]:items-center">
             <div className="flex gap-4">
-              <div
-                className="bg-center bg-no-repeat aspect-square bg-cover rounded-full min-h-32 w-32"
-                style={{
-                  backgroundImage: 'url("https://i.pinimg.com/236x/b6/2f/dc/b62fdc1469056818b6f6aa017afc3134.jpg")'
-                }}
-              ></div>
+              <div className="w-25 h-25 rounded-full bg-linear-to-br from-primary to-accent flex items-center justify-center text-white font-semibold text-3xl shadow-md ring-2 ring-background group-hover:ring-primary/50 transition-all">
+                {user.username?.charAt(0).toUpperCase() || 'U'}
+              </div>
               <div className="flex flex-col justify-center">
-                <p className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em]">{user.username}</p>
+                <p className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em]">
+                  {user.username.toUpperCase()}
+                </p>
                 {/* <p className="text-muted-foreground text-base font-normal leading-normal">AI Enthusiast | Knowledge Graph Contributor</p> */}
-                <p className="text-muted-foreground text-base font-normal leading-normal">Joined {user?.createdAt}</p>
+                <p className="text-muted-foreground text-base font-normal leading-normal">
+                  Joined {user?.createdAt}
+                </p>
               </div>
             </div>
-            <button 
-              onClick={() => logout()}
-              className="flex items-center justify-center gap-2 bg-destructive hover:bg-destructive/90 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md h-fit self-center"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-              </svg>
-              Log Out
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={() => navigate(`/user/${user.id}`)}
+                className=" flex items-center gap-2 bg-accent/60 text-white hover:bg-accent/70 text-sm font-medium px-5 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md h-fit self-center"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5.121 17.804A9 9 0 0112 15a9 9 0 016.879 2.804M12 12a4 4 0 100-8 4 4 0 000 8z"
+                  />
+                </svg>
+                Public Profile
+              </button>
+
+              <button
+                onClick={() => logout()}
+                className="flex items-center justify-center gap-2 bg-destructive hover:bg-destructive/90 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-all shadow-sm hover:shadow-md h-fit self-center"
+              >
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                Log Out
+              </button>
+            </div>
           </div>
         </div>
 
@@ -83,7 +120,9 @@ function Profile() {
 
         {/* Tab Content */}
         <div className="mt-2">
-          {activeTab === "overview" && <Overview communities={communities || []} />}
+          {activeTab === "overview" && (
+            <Overview communities={communities || []} />
+          )}
           {activeTab === "contributions" && <Contributions />}
           {activeTab === "settings" && <Settings user={user} />}
         </div>
@@ -93,11 +132,16 @@ function Profile() {
 }
 
 const Overview = ({ communities }: { communities: Community[] }) => {
-  const [filter, setFilter] = useState<"Owner" | "Admin" | "Member" | "All">("All");
+  const [filter, setFilter] = useState<"Owner" | "Admin" | "Member" | "All">(
+    "All"
+  );
 
   const roles = ["All", "Owner", "Admin", "Member"] as const;
-  const filtered = filter === "All" ? communities : communities.filter(c => c.role === filter.toUpperCase());
-  
+  const filtered =
+    filter === "All"
+      ? communities
+      : communities.filter((c) => c.role === filter.toUpperCase());
+
   return (
     <div>
       <h2 className="text-foreground text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
@@ -106,13 +150,15 @@ const Overview = ({ communities }: { communities: Community[] }) => {
 
       {/* Filter Pills */}
       <div className="flex gap-2 px-4 py-3 overflow-x-auto">
-        {roles.map(role => (
+        {roles.map((role) => (
           <button
             key={role}
             className={`px-4 py-1 rounded-full text-sm font-medium transition
-              ${filter === role
-                ? "bg-primary text-white shadow-[0_2px_6px_rgba(147,51,234,0.3)]"
-                : "bg-muted text-muted-foreground hover:bg-muted/80"}
+              ${
+                filter === role
+                  ? "bg-primary text-white shadow-[0_2px_6px_rgba(147,51,234,0.3)]"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }
             `}
             onClick={() => setFilter(role)}
           >
@@ -130,25 +176,27 @@ const Overview = ({ communities }: { communities: Community[] }) => {
         ) : (
           filtered.map((community, idx) => (
             <Link to={`/community/${community.id}`} key={idx}>
-              <div
-                className="flex justify-between items-center p-4 bg-card rounded-lg shadow-sm border border-border hover:shadow-md transition"
-              >
+              <div className="flex justify-between items-center p-4 bg-card rounded-lg shadow-sm border border-border hover:shadow-md transition">
                 <div className="flex flex-col">
-                <span className="text-foreground font-semibold text-base">{community.title}</span>
-                <span className="text-muted-foreground text-sm mt-1">Role: {community.role || 'Member'}</span>
+                  <span className="text-foreground font-semibold text-base">
+                    {community.title}
+                  </span>
+                  <span className="text-muted-foreground text-sm mt-1">
+                    Role: {community.role || "Member"}
+                  </span>
+                </div>
+                <span
+                  className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                    community.role === "Owner"
+                      ? "bg-primary/10 text-primary"
+                      : community.role === "Admin"
+                      ? "bg-secondary/10 text-secondary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {community.role}
+                </span>
               </div>
-              <span
-                className={`px-3 py-1 rounded-lg text-sm font-medium ${
-                  community.role === "Owner"
-                    ? "bg-primary/10 text-primary"
-                    : community.role === "Admin"
-                    ? "bg-secondary/10 text-secondary"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {community.role}
-              </span>
-            </div>
             </Link>
           ))
         )}
@@ -157,15 +205,30 @@ const Overview = ({ communities }: { communities: Community[] }) => {
   );
 };
 
-
 const Contributions = () => {
   const [filter, setFilter] = useState<"Approved" | "Pending">("Approved");
 
   const contributions = [
-    { title: "Added new AI concept: Neural Networks", date: "2023-08-15", status: "Approved" },
-    { title: "Updated existing concept: Machine Learning Algorithms", date: "2023-07-22", status: "Approved" },
-    { title: "Reviewed contribution: Natural Language Processing", date: "2023-06-10", status: "Approved" },
-    { title: "Suggested new concept: Generative AI Ethics", date: "2023-10-12", status: "Pending" },
+    {
+      title: "Added new AI concept: Neural Networks",
+      date: "2023-08-15",
+      status: "Approved",
+    },
+    {
+      title: "Updated existing concept: Machine Learning Algorithms",
+      date: "2023-07-22",
+      status: "Approved",
+    },
+    {
+      title: "Reviewed contribution: Natural Language Processing",
+      date: "2023-06-10",
+      status: "Approved",
+    },
+    {
+      title: "Suggested new concept: Generative AI Ethics",
+      date: "2023-10-12",
+      status: "Pending",
+    },
   ];
 
   const filtered = contributions.filter((c) => c.status === filter);
@@ -245,7 +308,10 @@ const Contributions = () => {
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={3} className="px-4 py-6 text-center text-muted-foreground text-sm italic">
+                  <td
+                    colSpan={3}
+                    className="px-4 py-6 text-center text-muted-foreground text-sm italic"
+                  >
                     No {filter.toLowerCase()} contributions yet.
                   </td>
                 </tr>
@@ -260,25 +326,55 @@ const Contributions = () => {
 
 const Settings = ({ user }: { user: any }) => {
   const { currentTheme, setTheme, colorFamily, mode } = useTheme();
-  
+
   const colorThemes = [
-    { color: 'purple', label: 'Purple', primary: '#9333ea', secondary: '#c084fc', accent: '#a855f7' },
-    { color: 'blue', label: 'Blue', primary: '#0ea5e9', secondary: '#0c4a6e', accent: '#06b6d4' },
-    { color: 'gray', label: 'Gray Stone', primary: '#4B5563', secondary: '#6B7280', accent: '#7F8287' },
-    { color: 'pink', label: 'Pink/Orange', primary: '#ec4899', secondary: '#be185d', accent: '#f472b6' },
+    {
+      color: "purple",
+      label: "Purple",
+      primary: "#9333ea",
+      secondary: "#c084fc",
+      accent: "#a855f7",
+    },
+    {
+      color: "blue",
+      label: "Blue",
+      primary: "#0ea5e9",
+      secondary: "#0c4a6e",
+      accent: "#06b6d4",
+    },
+    {
+      color: "gray",
+      label: "Gray Stone",
+      primary: "#4B5563",
+      secondary: "#6B7280",
+      accent: "#7F8287",
+    },
+    {
+      color: "pink",
+      label: "Pink/Orange",
+      primary: "#ec4899",
+      secondary: "#be185d",
+      accent: "#f472b6",
+    },
   ];
-  
+
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-foreground text-xl sm:text-2xl font-bold pb-3">Settings</h2>
-      <p className="text-muted-foreground text-sm pb-4">Manage your account settings and preferences.</p>
+      <h2 className="text-foreground text-xl sm:text-2xl font-bold pb-3">
+        Settings
+      </h2>
+      <p className="text-muted-foreground text-sm pb-4">
+        Manage your account settings and preferences.
+      </p>
 
       <div className="space-y-6">
         {/* Account Settings */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-foreground">Account</h3>
           <div>
-            <label className="block text-sm font-medium text-foreground">Username</label>
+            <label className="block text-sm font-medium text-foreground">
+              Username
+            </label>
             <input
               type="text"
               defaultValue={user.username}
@@ -286,7 +382,9 @@ const Settings = ({ user }: { user: any }) => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-foreground">Password</label>
+            <label className="block text-sm font-medium text-foreground">
+              Password
+            </label>
             <input
               type="password"
               defaultValue={user.password}
@@ -298,23 +396,28 @@ const Settings = ({ user }: { user: any }) => {
         {/* Theme Settings */}
         <div className="space-y-4 pt-4 border-t border-border">
           <h3 className="text-lg font-semibold text-foreground">Appearance</h3>
-          <p className="text-sm text-muted-foreground">Choose your preferred color theme. You can toggle between light and dark mode using the button in the navbar.</p>
-          
+          <p className="text-sm text-muted-foreground">
+            Choose your preferred color theme. You can toggle between light and
+            dark mode using the button in the navbar.
+          </p>
+
           {/* Color Theme Selection */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-3">Color Theme</label>
+            <label className="block text-sm font-medium text-foreground mb-3">
+              Color Theme
+            </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {colorThemes.map((theme) => {
                 const isActive = colorFamily === theme.color;
-                
+
                 return (
                   <button
                     key={theme.color}
                     onClick={() => setTheme(`${theme.color}-${mode}`)}
                     className={`relative p-4 rounded-lg border-2 transition-all ${
                       isActive
-                        ? 'border-primary shadow-lg scale-105 bg-primary/5'
-                        : 'border-border hover:border-primary/50 hover:shadow-md'
+                        ? "border-primary shadow-lg scale-105 bg-primary/5"
+                        : "border-border hover:border-primary/50 hover:shadow-md"
                     }`}
                   >
                     {/* Theme Preview */}
@@ -332,14 +435,14 @@ const Settings = ({ user }: { user: any }) => {
                         style={{ backgroundColor: theme.accent }}
                       />
                     </div>
-                    
+
                     {/* Theme Icon & Name */}
                     <div className="flex flex-col items-center gap-1">
                       <p className="text-sm font-semibold text-foreground">
                         {theme.label}
                       </p>
                     </div>
-                    
+
                     {/* Active Indicator */}
                     {isActive && (
                       <div className="absolute top-2 right-2">
@@ -361,28 +464,42 @@ const Settings = ({ user }: { user: any }) => {
               })}
             </div>
           </div>
-          
+
           {/* Current Mode Display */}
           <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
             <span className="text-sm text-muted-foreground">Current mode:</span>
             <span className="text-sm font-semibold text-foreground flex items-center gap-1">
-              {mode === 'light' ? (
+              {mode === "light" ? (
                 <>
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   Light
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    className="w-4 h-4"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                   </svg>
                   Dark
                 </>
               )}
             </span>
-            <span className="text-xs text-muted-foreground ml-auto">Use the navbar toggle to switch</span>
+            <span className="text-xs text-muted-foreground ml-auto">
+              Use the navbar toggle to switch
+            </span>
           </div>
         </div>
       </div>

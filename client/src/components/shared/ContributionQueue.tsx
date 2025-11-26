@@ -16,14 +16,28 @@ function ProposalDetailModal({
   isOpen,
   onClose,
   proposal,
+  onVote,
 }: {
   isOpen: boolean;
   onClose: () => void;
   proposal: NodeProposal | EdgeProposal | null;
+  onVote?: (proposalId: string, proposalType: 'node' | 'edge', voteValue: number) => Promise<void>;
 }) {
   if (!proposal) return null;
 
   const isNode = 'name' in proposal;
+  const [isVoting, setIsVoting] = useState(false);
+
+  const handleVote = async (voteValue: number) => {
+    if (!onVote) return;
+    
+    setIsVoting(true);
+    try {
+      await onVote(proposal.id, isNode ? 'node' : 'edge', voteValue);
+    } finally {
+      setIsVoting(false);
+    }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -125,15 +139,15 @@ function ProposalDetailModal({
           )}
 
           {/* Properties */}
-          {proposal.properties && proposal.properties.length > 0 && (
+          {proposal.properties && Object.keys(proposal.properties).length > 0 && (
             <div className="bg-muted rounded-lg p-4 space-y-3">
               <h3 className="font-semibold text-foreground">Properties</h3>
               
               <div className="space-y-2">
-                {proposal.properties.map((prop, idx) => (
+                {Object.entries(proposal.properties).map(([key, value], idx) => (
                   <div key={idx} className="flex justify-between items-start text-sm border-b border-border pb-2 last:border-0">
-                    <p className="text-muted-foreground font-medium">{prop.key}:</p>
-                    <p className="text-foreground text-right break-all">{String(prop.value)}</p>
+                    <p className="text-muted-foreground font-medium">{key}:</p>
+                    <p className="text-foreground text-right break-all">{String(value)}</p>
                   </div>
                 ))}
               </div>
@@ -144,7 +158,7 @@ function ProposalDetailModal({
           <div className="bg-muted rounded-lg p-4 space-y-3">
             <h3 className="font-semibold text-foreground">Voting Information</h3>
             
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-2 gap-3 text-sm mb-4">
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5 text-success" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
@@ -164,6 +178,32 @@ function ProposalDetailModal({
                 </div>
               </div>
             </div>
+
+            {/* Vote Buttons */}
+            {onVote && (
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleVote(1)}
+                  disabled={isVoting}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-success bg-success/10 hover:bg-success/20 border border-success/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                  </svg>
+                  <span>{isVoting ? 'Voting...' : 'Upvote'}</span>
+                </button>
+                <button
+                  onClick={() => handleVote(-1)}
+                  disabled={isVoting}
+                  className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-destructive bg-destructive/10 hover:bg-destructive/20 border border-destructive/30 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                  <span>{isVoting ? 'Voting...' : 'Downvote'}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Community Info */}
@@ -288,6 +328,7 @@ export function ContributionQueueSection({
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         proposal={selectedProposal}
+        onVote={onVote}
       />
     </>
   );
@@ -415,7 +456,11 @@ export function ContributionQueueModal({
                   </div>
                 ) : filteredProposals.length > 0 ? (
                   <div className="flex flex-col gap-3 pr-2">
-                    {filteredProposals.map(renderProposal)}
+                    {filteredProposals.map((proposal, index) => (
+                      <div key={`${proposal.kind}-${proposal.id}-${index}`}>
+                        {renderProposal(proposal)}
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-12">
@@ -453,6 +498,7 @@ export function ContributionQueueModal({
         isOpen={isDetailOpen}
         onClose={() => setIsDetailOpen(false)}
         proposal={selectedProposal}
+        onVote={onVote}
       />
     </>
   );

@@ -1,14 +1,11 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useParams, Link } from "react-router-dom";
 import { useApi } from "@/hooks/apiHook";
 import { getUserById, getCommunitiesOfUser } from "@/services/api";
 import type { Community, User } from "@/schema";
 
 function UserProfile() {
   const { userId } = useParams<{ userId: string }>();
-  const navigate = useNavigate();
-  const { user: currentUser } = useAuth();
   const [activeTab, setActiveTab] = useState<"overview" | "contributions">("overview");
 
   const { data: profileUser, loading: userLoading, error: userError, callApi: fetchUser } = useApi<User>(getUserById);
@@ -20,13 +17,6 @@ function UserProfile() {
       fetchCommunities(userId);
     }
   }, [userId]);
-
-  // If viewing own profile, redirect to /profile
-  useEffect(() => {
-    if (currentUser && userId === currentUser.id) {
-      navigate("/profile");
-    }
-  }, [currentUser, userId, navigate]);
 
   const tabs = [
     { key: "overview", label: "Overview" },
@@ -72,7 +62,7 @@ function UserProfile() {
               </div>
               <div className="flex flex-col justify-center">
                 <p className="text-foreground text-xl sm:text-[22px] font-bold leading-tight tracking-[-0.015em]">
-                  {profileUser.username}
+                  {profileUser.username.toUpperCase()}
                 </p>
                 <p className="text-muted-foreground text-sm sm:text-base font-normal leading-normal">
                   Joined {new Date(profileUser.createdAt).toLocaleDateString()}

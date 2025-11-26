@@ -1,5 +1,4 @@
 import axios from "axios";
-import { dummyEdgeProposals, dummyNodeProposals } from "./data";
 
 const BASE_URL = "https://crowdgraph.onrender.com";
 
@@ -47,6 +46,35 @@ export const leaveCommunity = async (communityId: string, userId: string) => {
   );
   return response.data;
 };
+
+// create a new community
+export const createCommunity = async (title: string, description: string, ownerId: string) => {
+  const response = await axios.post(`${BASE_URL}/community/create`, {
+    title,
+    description,
+    ownerId,
+  });
+  return response.data;
+};
+
+// update a community
+export const updateCommunity = async (
+  communityId: string,
+  title: string,
+  description: string
+) => {
+  const response = await axios.put(`${BASE_URL}/community/${communityId}/update`, {
+    title,
+    description,
+  });
+  return response.data;
+};
+
+// delete a community
+export const deleteCommunity = async (communityId: string) => {
+  const response = await axios.delete(`${BASE_URL}/community/${communityId}/delete`);
+  return response.data;
+}
 
 ///////////////////////////// Post Management /////////////////////////////
 // get all posts in community by community id
@@ -146,6 +174,20 @@ export const deleteComment = async (commentId: string) => {
   return response.data;
 };
 
+// vote a comment with upvote or downvote or none as +1 or -1 or 0
+export const voteComment = async (
+  commentId: string,
+  voteValue: number,
+  userId: string
+) => {
+  const response = await axios.post(`${BASE_URL}/comment/vote`, {
+    commentId,
+    voteValue,
+    userId,
+  });
+  return response.data;
+};
+
 ///////////////////////////// User Management /////////////////////////////
 // get all users
 export const getAllUsers = async () => {
@@ -211,7 +253,7 @@ export const getCommunitiesOfUser = async (userId: string) => {
 // get all nodes and edges in community by community id
 export const getGraphInCommunity = async (communityId: string) => {
   const response = await axios.get(
-    `${BASE_URL}/graph/${communityId}/community`
+    `${BASE_URL}/node/${communityId}/graph`
   );
   return response.data;
 };
@@ -222,16 +264,24 @@ export const getNodeProposalsInCommunity = async (communityId: string) => {
   return response.data;
 };
 
+
+// get all edge proposals in community by community id
+export const getEdgeProposalsInCommunity = async (communityId: string) => {
+  const response = await axios.get(`${BASE_URL}/edge/${communityId}/proposal`);
+  return response.data;
+};
+
 // get all nodes and edges proposals in community by community id
 export const getGraphProposalsInCommunity = async (communityId: string) => {
-//   const nodesResponse = await getNodeProposalsInCommunity(communityId);
+  const nodesResponse = await getNodeProposalsInCommunity(communityId);
+  const edgesResponse = await getEdgeProposalsInCommunity(communityId);
   const response = {
     data: {
       success: true,
       data: {
         // nodeProposals: nodesResponse?.data,
-        nodeProposals: dummyNodeProposals,
-        edgeProposals: dummyEdgeProposals,
+        nodeProposals: nodesResponse?.data,
+        edgeProposals: edgesResponse?.data,
       },
       error: null,
     },
@@ -246,18 +296,31 @@ export const createNodeProposal = async (
   userId: string,
   name: string,
   labels: string[],
-  properties: { key: string; value: any }[],
-  proposalType: "CREATE" | "UPDATE" | "DELETE"
+  properties: { [key: string]: any },
+  proposalType: "CREATE" | "UPDATE" | "DELETE",
+  nodeId?: string
 ) => {
+  console.log("createNodeProposal called with:", {
+    communityId,
+    userId,
+    name,
+    labels,
+    properties,
+    proposalType
+  });
   try {
-    const response = await axios.post(`${BASE_URL}/node/proposal`, {
+    const payload: any = {
       communityId,
       userId,
       name,
       labels,
       properties,
       proposalType,
-    });
+    };
+    if (nodeId) {
+      payload.nodeId = nodeId;
+    }
+    const response = await axios.post(`${BASE_URL}/node/proposal`, payload);
     return response.data;
   } catch (err: any) {
     return err.response?.data;
@@ -271,11 +334,12 @@ export const createEdgeProposal = async (
   sourceId: string,
   targetId: string,
   type: string,
-  properties: { key: string; value: any }[],
-  proposalType: "CREATE" | "UPDATE" | "DELETE"
+  properties: { [key: string]: any },
+  proposalType: "CREATE" | "UPDATE" | "DELETE",
+  edgeId?: string
 ) => {
   try {
-    const response = await axios.post(`${BASE_URL}/edge/proposal`, {
+    const payload: any = {
       communityId,
       userId,
       sourceId,
@@ -283,7 +347,11 @@ export const createEdgeProposal = async (
       type,
       properties,
       proposalType,
-    });
+    };
+    if (edgeId) {
+      payload.edgeId = edgeId;
+    }
+    const response = await axios.post(`${BASE_URL}/edge/proposal`, payload);
     return response.data;
   } catch (err: any) {
     return err.response?.data;

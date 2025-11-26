@@ -3,7 +3,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { ChevronDown, ChevronRight, MessageSquare, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, MessageSquare, MoreVertical, Pencil, Trash2, ThumbsUp, ThumbsDown, Send, X } from "lucide-react";
 import { toast } from "sonner";
 import type { Post, Comment } from "@/schema/index";
 import { 
@@ -16,7 +16,8 @@ import {
   updatePost,
   deletePost,
   updateComment,
-  deleteComment
+  deleteComment,
+  voteComment
 } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
 import SearchBar from "./SearchBar";
@@ -49,9 +50,8 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [replies, setReplies] = useState<Record<string, Comment[]>>({});
   const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({});
-  const [expandedReplies, setExpandedReplies] = useState<Record<string, boolean>>({});
+  const [expandedThreads, setExpandedThreads] = useState<Record<string, boolean>>({});
   const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>({});
-  const [showReplyBox, setShowReplyBox] = useState<Record<string, boolean>>({});
   const [commentText, setCommentText] = useState<Record<string, string>>({});
   const [newPostTitle, setNewPostTitle] = useState("");
   const [newPostContent, setNewPostContent] = useState("");
@@ -60,6 +60,10 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingComments, setLoadingComments] = useState<Record<string, boolean>>({});
   const [loadingReplies, setLoadingReplies] = useState<Record<string, boolean>>({});
+  
+  // Voting states - tracks user's vote for each comment (1 = upvote, -1 = downvote, 0 = none)
+  const [userVotes, setUserVotes] = useState<Record<string, number>>({});
+  const [votingComments, setVotingComments] = useState<Record<string, boolean>>({});
   
   // Edit/Delete states
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -111,8 +115,8 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
 
   const toggleReplies = async (commentId: string) => {
     // Toggle the expanded state
-    const willExpand = !expandedReplies[commentId];
-    setExpandedReplies((prev) => ({ ...prev, [commentId]: willExpand }));
+    const willExpand = !expandedThreads[commentId];
+    setExpandedThreads((prev) => ({ ...prev, [commentId]: willExpand }));
     
     // Only fetch if expanding and we don't already have the replies
     if (willExpand && !replies[commentId]) {
@@ -146,8 +150,6 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
           ...prev,
           [parentId]: [...(prev[parentId] || []), newComment as Comment],
         }));
-        // Hide the reply box after successful submission
-        setShowReplyBox((prev) => ({ ...prev, [parentId]: false }));
         toast.success("Reply posted successfully!");
       } else {
         // This is a top-level comment - add it directly to the post's comments
@@ -291,13 +293,89 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
     }
   };
 
+  const handleVoteComment = async (comment: Comment, voteValue: number) => {
+    if (!user) {
+      toast.error("You must be logged in to vote");
+      return;
+    }
+
+    // Check if user is already voting (prevent double clicks)
+    if (votingComments[comment.id]) {
+      return;
+    }
+
+    const currentVote = userVotes[comment.id] || 0;
+    
+    // If clicking the same button, remove the vote (toggle off)
+    const newVote = currentVote === voteValue ? 0 : voteValue;
+
+    // Optimistic update
+    setUserVotes((prev) => ({ ...prev, [comment.id]: newVote }));
+    setVotingComments((prev) => ({ ...prev, [comment.id]: true }));
+
+    // Update comment vote counts optimistically
+    const updateCommentVotes = (commentsList: Comment[]) => {
+      return commentsList.map(c => {
+        if (c.id === comment.id) {
+          const voteChange = newVote - currentVote;
+          return {
+            ...c,
+            voteCount: (c.voteCount || 0) + voteChange
+          };
+        }
+        return c;
+      });
+    };
+
+    try {
+      await voteComment(comment.id, newVote, user.id);
+
+      // Update comments or replies
+      if (comment.parentCommentId) {
+        setReplies((prev) => ({
+          ...prev,
+          [comment.parentCommentId]: updateCommentVotes(prev[comment.parentCommentId] || [])
+        }));
+      } else {
+        setComments((prev) => ({
+          ...prev,
+          [comment.postId]: updateCommentVotes(prev[comment.postId] || [])
+        }));
+      }
+
+      toast.success(newVote === 1 ? "Upvoted!" : newVote === -1 ? "Downvoted!" : "Vote removed");
+    } catch (err) {
+      console.error("Failed to vote on comment:", err);
+      // Revert optimistic update
+      setUserVotes((prev) => ({ ...prev, [comment.id]: currentVote }));
+      toast.error("Failed to vote on comment. Please try again.");
+    } finally {
+      setVotingComments((prev) => ({ ...prev, [comment.id]: false }));
+    }
+  };
+
   const MAX_CONTENT_LENGTH = 300;
 
-  const truncateContent = (content: string, isExpanded: boolean) => {
+  const truncateContent = (content: string | undefined, isExpanded: boolean) => {
+    if (!content) return "";
     if (isExpanded || content.length <= MAX_CONTENT_LENGTH) {
       return content;
     }
     return content.substring(0, MAX_CONTENT_LENGTH) + "...";
+  };
+
+  const getTimeAgo = (date: Date | string): string => {
+    const now = new Date();
+    const createdDate = new Date(date);
+    const seconds = Math.floor((now.getTime() - createdDate.getTime()) / 1000);
+
+    if (seconds < 60) return "just now";
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    if (seconds < 2592000) return `${Math.floor(seconds / 604800)}w ago`;
+    if (seconds < 31536000) return `${Math.floor(seconds / 2592000)}mo ago`;
+    return `${Math.floor(seconds / 31536000)}y ago`;
   };
 
   const handleSearch = async (query: string) => {
@@ -322,19 +400,22 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
   };
 
   const renderCommentTree = (comment: Comment, depth = 0) => {
-    const hasReplies = expandedReplies[comment.id];
-    const isReplyBoxVisible = showReplyBox[comment.id];
+    const isThreadExpanded = expandedThreads[comment.id];
     const isAuthor = user?.id === comment.userId;
     const isReply = depth > 0;
     const fontSize = isReply ? "text-xs" : "text-sm";
     const textColor = isReply ? "text-muted-foreground" : "text-foreground";
+    const commentReplies = replies[comment.id] || [];
     
     return (
       <div
         key={comment.id}
         className={`ml-${depth * 3} mt-1.5 border-l border-border/50 pl-2`}
       >
-        <div className="bg-transparent rounded-md p-0 hover:bg-muted/30 transition">
+        <div 
+          className="bg-transparent rounded-md p-0 hover:bg-muted/30 transition cursor-pointer"
+          onClick={() => toggleReplies(comment.id)}
+        >
           <div className="flex items-start justify-between gap-1">
             <div className="flex-1 min-w-0">
               <p className={`font-semibold ${fontSize} ${textColor}`}>{comment.username || "Unknown User"}</p>
@@ -343,7 +424,12 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
             {isAuthor && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0 shrink-0">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 w-6 p-0 shrink-0"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <MoreVertical size={14} />
                   </Button>
                 </DropdownMenuTrigger>
@@ -364,75 +450,118 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
             )}
           </div>
           <div className="flex items-center justify-between text-xs text-muted-foreground/70 mt-1">
-            <span className="text-xs">{new Date(comment.createdAt).toLocaleString()}</span>
-            <div className="flex gap-1">
+            <span className="text-xs">{getTimeAgo(comment.createdAt)}</span>
+            <div className="flex gap-0.5 items-center">
+              {/* Upvote Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleVoteComment(comment, 1);
+                }}
+                disabled={votingComments[comment.id]}
+                className={`h-6 w-6 p-0 flex items-center justify-center transition-colors ${
+                  userVotes[comment.id] === 1
+                    ? "text-green-500 hover:text-green-600"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <ThumbsUp size={12} />
+              </Button>
+
+              {/* Vote Count */}
+              <span className="text-xs px-1 min-w-6 text-center text-muted-foreground">
+                {comment.voteCount || 0}
+              </span>
+
+              {/* Downvote Button */}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleVoteComment(comment, -1);
+                }}
+                disabled={votingComments[comment.id]}
+                className={`h-6 w-6 p-0 flex items-center justify-center transition-colors ${
+                  userVotes[comment.id] === -1
+                    ? "text-red-500 hover:text-red-600"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <ThumbsDown size={12} />
+              </Button>
+
+              {/* Reply Button */}
               {isMember && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowReplyBox((prev) => ({ ...prev, [comment.id]: !prev[comment.id] }))}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleReplies(comment.id);
+                  }}
                   className="text-xs flex items-center gap-1 h-6 px-1.5"
                 >
                   <MessageSquare size={12} />
                   <span>Reply</span>
                 </Button>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => toggleReplies(comment.id)}
-                className="text-xs flex items-center gap-1 h-6 px-1.5"
-              >
-                {hasReplies ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-                <span>Replies</span>
-              </Button>
             </div>
           </div>
         </div>
 
-        {/* Reply Input Box - Always under the comment when visible */}
-        {isReplyBoxVisible && (
-          <div className="mt-1.5 ml-3">
-            <Textarea
-              placeholder="Write a reply..."
-              value={commentText[comment.postId + comment.id] || ""}
-              onChange={(e) =>
-                setCommentText((prev) => ({
-                  ...prev,
-                  [comment.postId + comment.id]: e.target.value,
-                }))
-              }
-              className="min-h-10 text-xs"
-            />
-            <div className="flex gap-1.5 mt-1">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => handleAddComment(comment.postId, comment.id)}
-                className="text-xs h-7"
-              >
-                Reply
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setShowReplyBox((prev) => ({ ...prev, [comment.id]: false }));
-                  setCommentText((prev) => ({ ...prev, [comment.postId + comment.id]: "" }));
-                }}
-                className="text-xs h-7"
-              >
-                Cancel
-              </Button>
+        {/* Reply Thread - Shows when user clicks Reply */}
+        {isThreadExpanded && (
+          <>
+            {/* Reply Input Box */}
+            <div className="mt-1.5 ml-3">
+              <div className="flex gap-1.5 items-end">
+                <Textarea
+                  placeholder="Write a reply..."
+                  value={commentText[comment.postId + comment.id] || ""}
+                  onChange={(e) =>
+                    setCommentText((prev) => ({
+                      ...prev,
+                      [comment.postId + comment.id]: e.target.value,
+                    }))
+                  }
+                  className="min-h-10 text-xs flex-1"
+                />
+                <div className="flex gap-1 shrink-0">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleAddComment(comment.postId, comment.id)}
+                    className="h-8 w-8 p-0 flex items-center justify-center"
+                    title="Send reply"
+                  >
+                    <Send size={14} />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      toggleReplies(comment.id);
+                      setCommentText((prev) => ({ ...prev, [comment.postId + comment.id]: "" }));
+                    }}
+                    className="h-8 w-8 p-0 flex items-center justify-center"
+                    title="Cancel"
+                  >
+                    <X size={14} />
+                  </Button>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
 
-        {/* Nested Replies */}
-        {hasReplies && (
-          <div className="ml-2 mt-1">
-            {replies[comment.id]?.map((reply) => renderCommentTree(reply, depth + 1))}
-          </div>
+            {/* Existing Replies */}
+            {commentReplies.length > 0 && (
+              <div className="ml-2 mt-1.5 space-y-1">
+                {commentReplies.map((reply) => renderCommentTree(reply, depth + 1))}
+              </div>
+            )}
+          </>
         )}
       </div>
     );
@@ -555,7 +684,7 @@ export const CommunityFeed: React.FC<CommunityFeedProps> = ({ communityId, isMem
                 {truncateContent(post.content, expandedPosts[post.id])}
               </p>
               
-              {post.content.length > MAX_CONTENT_LENGTH && (
+              {post.content && post.content.length > MAX_CONTENT_LENGTH && (
                 <Button
                   variant="ghost"
                   size="sm"

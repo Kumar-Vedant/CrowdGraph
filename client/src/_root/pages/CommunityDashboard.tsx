@@ -12,6 +12,11 @@ import {
   getGraphProposalsInCommunity,
   voteNodeProposal,
   voteEdgeProposal,
+  getGraphInCommunity,
+  createNodeProposal,
+  createEdgeProposal,
+  updateCommunity,
+  deleteCommunity,
 } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
 import { useEffect, useState } from "react";
@@ -33,6 +38,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import KnowledgeGraph from "@/components/shared/KnowledgeGraph";
 
 // Community Feed Component
@@ -88,6 +94,11 @@ function CommunityDashboard() {
   } = useApi(getGraphProposalsInCommunity);
   const { callApi: callVoteNodeApi } = useApi(voteNodeProposal);
   const { callApi: callVoteEdgeApi } = useApi(voteEdgeProposal);
+  const {
+    data: graphData,
+    loading: graphLoading,
+    callApi: callGraphApi,
+  } = useApi(getGraphInCommunity);
 
   const proposalsData = proposalsResponse as GraphProposals | null;
 
@@ -95,7 +106,14 @@ function CommunityDashboard() {
   const [isGraphModalOpen, setIsGraphModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [isContributionQueueModalOpen, setIsContributionQueueModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editModalData, setEditModalData] = useState<{ type: 'node' | 'edge'; data: any; properties: { key: string; value: string }[] } | null>(null);
   const [isMemberOfCommunity, setIsMemberOfCommunity] = useState(false);
+  const [isOwnerSettingsModalOpen, setIsOwnerSettingsModalOpen] = useState(false);
+  const [ownerSettingsTitle, setOwnerSettingsTitle] = useState<string>("");
+  const [ownerSettingsDescription, setOwnerSettingsDescription] = useState<string>("");
+  const [isUpdatingCommunity, setIsUpdatingCommunity] = useState(false);
+  const [isDeletingCommunity, setIsDeletingCommunity] = useState(false);
 
   // Check if user is a member
   useEffect(() => {
@@ -106,6 +124,14 @@ function CommunityDashboard() {
       setIsMemberOfCommunity(isMember);
     }
   }, [communityMembers, user]);
+
+  // Initialize owner settings modal values
+  useEffect(() => {
+    if (communityData) {
+      setOwnerSettingsTitle(communityData.title);
+      setOwnerSettingsDescription(communityData.description);
+    }
+  }, [communityData]);
 
   // --- Vote handler ---
   const handleVote = async (proposalId: string, proposalType: 'node' | 'edge', voteValue: number) => {
@@ -167,6 +193,67 @@ function CommunityDashboard() {
     }
   };
 
+  // --- Owner handlers ---
+  const handleUpdateCommunity = async () => {
+    if (!communityId) return;
+
+    if (!ownerSettingsTitle.trim()) {
+      toast.error("Community title is required!");
+      return;
+    }
+
+    if (!ownerSettingsDescription.trim()) {
+      toast.error("Community description is required!");
+      return;
+    }
+
+    setIsUpdatingCommunity(true);
+    try {
+      const response = await updateCommunity(
+        communityId,
+        ownerSettingsTitle.trim(),
+        ownerSettingsDescription.trim()
+      );
+
+      if (response?.success) {
+        toast.success("Community updated successfully!");
+        await callCommunityApi(communityId);
+      } else {
+        toast.error(response?.error || "Failed to update community!");
+      }
+    } catch (error) {
+      toast.error("Error updating community!");
+    } finally {
+      setIsUpdatingCommunity(false);
+    }
+  };
+
+  const handleDeleteCommunity = async () => {
+    if (!communityId) return;
+
+    // Confirm deletion
+    if (!window.confirm("Are you sure you want to delete this community? This action cannot be undone.")) {
+      return;
+    }
+
+    setIsDeletingCommunity(true);
+    try {
+      const response = await deleteCommunity(communityId);
+
+      if (response?.success) {
+        toast.success("Community deleted successfully!");
+        setIsOwnerSettingsModalOpen(false);
+        navigate("/Communities");
+      } else {
+        toast.error(response?.error || "Failed to delete community!");
+      }
+    } catch (error) {
+      toast.error("Error deleting community!");
+    } finally {
+      setIsDeletingCommunity(false);
+    }
+  };
+
   // Get members sorted by reputation
   const getSortedMembers = () => {
     if (!Array.isArray(communityMembers)) return [];
@@ -182,7 +269,7 @@ function CommunityDashboard() {
   const [nodeName, setNodeName] = useState<string>("");
   const [nodeProperties, setNodeProperties] = useState<
     { key: string; value: string }[]
-  >([]);
+  >([{ key: "", value: "" }]);
 
   // --- Edge state ---
   const [edgeData, setEdgeData] = useState<Partial<Edge>>({});
@@ -226,7 +313,7 @@ function CommunityDashboard() {
   };
 
   // --- Node submit ---
-  const handleNodeSubmit = () => {
+  const handleNodeSubmit = async () => {
     if (!nodeName.trim()) {
       toast.error("Node name is required!");
       return;
@@ -240,26 +327,50 @@ function CommunityDashboard() {
       }
     }
 
-    const formattedProps: Array<{ key: string; value: any }> = nodeProperties
+    const formattedProps: { [key: string]: any } = {};
+    nodeProperties
       .filter((p) => p.key.trim() && p.value.trim())
-      .map((p) => ({ key: p.key.trim(), value: p.value }));
+      .forEach((p) => {
+        formattedProps[p.key.trim()] = p.value;
+      });
 
-    const newNode: Partial<Node> = {
-      labels: nodeLabels.filter((l) => l.trim()),
-      name: nodeName.trim(),
-      properties: formattedProps,
-    };
+    // Validate that at least 1 property is mandatory
+    if (Object.keys(formattedProps).length === 0) {
+      toast.error("At least one property is mandatory for a node!");
+      return;
+    }
 
-    toast.success("Node added successfully!");
+    try {
+      // Create node proposal with CREATE type
+      const response = await createNodeProposal(
+        communityId!,
+        user?.id!,
+        nodeName.trim(),
+        nodeLabels.filter((l) => l.trim()),
+        formattedProps,
+        "CREATE"
+      );
 
-    setIsModalOpen(false);
-    setNodeLabels([]);
-    setNodeName("");
-    setNodeProperties([]);
+      if (response?.success) {
+        toast.success("Node proposal created successfully!");
+        setIsModalOpen(false);
+        setNodeLabels([]);
+        setNodeName("");
+        setNodeProperties([{ key: "", value: "" }]);
+        // Refresh proposals
+        if (communityId) {
+          callProposalsApi(communityId);
+        }
+      } else {
+        toast.error(response?.error || "Failed to create node proposal!");
+      }
+    } catch (err) {
+      toast.error("Error creating node proposal!");
+    }
   };
 
   // --- Edge submit ---
-  const handleEdgeSubmit = () => {
+  const handleEdgeSubmit = async () => {
     if (!edgeData.sourceId || !edgeData.targetId || !edgeData.type) {
       toast.error("Edge source, target, and type are mandatory!");
       return;
@@ -273,22 +384,142 @@ function CommunityDashboard() {
       }
     }
 
-    const formattedProps = edgeProperties
+    const formattedProps: { [key: string]: any } = {};
+    edgeProperties
       .filter((p) => p.key.trim() && p.value.trim())
-      .map((p) => ({ key: p.key.trim(), value: p.value }));
+      .forEach((p) => {
+        formattedProps[p.key.trim()] = p.value;
+      });
 
-    const newEdge: Partial<Edge> = {
-      sourceId: edgeData.sourceId!,
-      targetId: edgeData.targetId!,
-      type: edgeData.type!,
-      properties: formattedProps,
-    };
+    // Validate that at least 1 property is mandatory
+    if (Object.keys(formattedProps).length === 0) {
+      toast.error("At least one property is mandatory for an edge!");
+      return;
+    }
 
-    toast.success("Edge added successfully!");
+    try {
+      // Create edge proposal with CREATE type
+      const response = await createEdgeProposal(
+        communityId!,
+        user?.id!,
+        edgeData.sourceId,
+        edgeData.targetId,
+        edgeData.type,
+        formattedProps,
+        "CREATE"
+      );
 
-    setIsModalOpen(false);
-    setEdgeData({});
-    setEdgeProperties([{ key: "", value: "" }]);
+      if (response?.success) {
+        toast.success("Edge proposal created successfully!");
+        setIsModalOpen(false);
+        setEdgeData({});
+        setEdgeProperties([{ key: "", value: "" }]);
+        // Refresh proposals
+        if (communityId) {
+          callProposalsApi(communityId);
+        }
+      } else {
+        toast.error(response?.error || "Failed to create edge proposal!");
+      }
+    } catch (err) {
+      toast.error("Error creating edge proposal!");
+    }
+  };
+
+  // --- Handle node/edge update ---
+  const handleGraphUpdate = async (type: 'node' | 'edge', data: any) => {
+    try {
+      if (type === 'node') {
+        const response = await createNodeProposal(
+          communityId!,
+          user?.id!,
+          data.label,
+          data.labels || [],
+          data.details?.reduce((acc: any, d: any) => ({ ...acc, [d.key]: d.value }), {}) || {},
+          "UPDATE",
+          data.id
+        );
+        if (response?.success) {
+          toast.success("Node update proposal created!");
+          if (communityId) callProposalsApi(communityId);
+        } else {
+          toast.error(response?.error || "Failed to create update proposal");
+        }
+      } else {
+        const response = await createEdgeProposal(
+          communityId!,
+          user?.id!,
+          data.source?.id || data.sourceId,
+          data.target?.id || data.targetId,
+          data.label,
+          data.details?.reduce((acc: any, d: any) => ({ ...acc, [d.key]: d.value }), {}) || {},
+          "UPDATE",
+          data.id
+        );
+        if (response?.success) {
+          toast.success("Edge update proposal created!");
+          if (communityId) callProposalsApi(communityId);
+        } else {
+          toast.error(response?.error || "Failed to create update proposal");
+        }
+      }
+    } catch (err) {
+      toast.error("Error creating update proposal");
+    }
+  };
+
+  // --- Open edit modal from graph ---
+  const handleOpenEditModal = (type: 'node' | 'edge', data: any) => {
+    console.log("Edit modal opened with data:", { type, data });
+    const properties = data.details || Object.entries(data.properties || {}).map(([key, value]) => ({ key, value }));
+    setEditModalData({
+      type,
+      data,
+      properties: Array.isArray(properties) ? properties : [],
+    });
+    setIsEditModalOpen(true);
+  };
+
+  // --- Handle node/edge delete ---
+  const handleGraphDelete = async (type: 'node' | 'edge', nodeOrEdgeData: any) => {
+    try {
+      if (type === 'node') {
+        const response = await createNodeProposal(
+          communityId!,
+          user?.id!,
+          nodeOrEdgeData.label || "",
+          [],
+          {},
+          "DELETE",
+          nodeOrEdgeData.id
+        );
+        if (response?.success) {
+          toast.success("Node delete proposal created!");
+          if (communityId) callProposalsApi(communityId);
+        } else {
+          toast.error(response?.error || "Failed to create delete proposal");
+        }
+      } else {
+        const response = await createEdgeProposal(
+          communityId!,
+          user?.id!,
+          nodeOrEdgeData.source?.id || nodeOrEdgeData.sourceId || "",
+          nodeOrEdgeData.target?.id || nodeOrEdgeData.targetId || "",
+          nodeOrEdgeData.label || "",
+          {},
+          "DELETE",
+          nodeOrEdgeData.id
+        );
+        if (response?.success) {
+          toast.success("Edge delete proposal created!");
+          if (communityId) callProposalsApi(communityId);
+        } else {
+          toast.error(response?.error || "Failed to create delete proposal");
+        }
+      }
+    } catch (err) {
+      toast.error("Error creating delete proposal");
+    }
   };
 
   // --- API calls ---
@@ -296,6 +527,7 @@ function CommunityDashboard() {
     if (communityId) {
       callCommunityApi(communityId);
       callProposalsApi(communityId);
+      callGraphApi(communityId);
     }
   }, [communityId]);
 
@@ -355,6 +587,9 @@ function CommunityDashboard() {
                   · Created at:{" "}
                   {new Date(communityData.createdAt).toLocaleDateString()}
                 </p>
+                <p className="text-muted-foreground text-xs sm:text-sm font-normal">
+                  {communityData.description}
+                </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="text-muted-foreground text-xs sm:text-sm font-normal">
                     {membersLoading
@@ -363,15 +598,86 @@ function CommunityDashboard() {
                   </p>
                   {!membersLoading && memberCount > 0 && (
                     <button
-                      className="px-3 py-1 bg-primary/50 text-white text-xs font-medium rounded-full hover:bg-primary/20 transition-colors shadow-sm"
+                      className="flex w-full sm:w-auto cursor-pointer items-center justify-center overflow-hidden rounded-lg h-7 px-4 bg-primary/50 text-white text-xs sm:text-sm font-medium leading-normal hover:bg-primary/20 transition-all"
                       onClick={() => setIsMembersModalOpen(true)}
                     >
                       View Members
                     </button>
                   )}
-                  {isMemberOfCommunity ? (
+                  {user?.id === communityData?.ownerId ? (
+                    // Owner options
+                    <Dialog open={isOwnerSettingsModalOpen} onOpenChange={setIsOwnerSettingsModalOpen}>
+                      <DialogTrigger asChild>
+                        <button className="flex w-full sm:w-auto cursor-pointer items-center justify-center overflow-hidden rounded-lg h-7 px-4 bg-accent/50 text-accent-foreground text-xs sm:text-sm font-medium leading-normal hover:bg-accent/20 transition-all">
+                          <span className="truncate">Community Settings</span>
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="w-[95vw] sm:max-w-[500px] rounded-2xl">
+                        <DialogHeader>
+                          <DialogTitle className="text-xl font-semibold">
+                            Community Settings
+                          </DialogTitle>
+                          <DialogDescription>
+                            Update or delete your community.
+                          </DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-sm font-medium text-foreground block mb-2">
+                              Community Title
+                            </label>
+                            <Input
+                              placeholder="Community Title"
+                              value={ownerSettingsTitle}
+                              onChange={(e) => setOwnerSettingsTitle(e.target.value)}
+                              disabled={isUpdatingCommunity || isDeletingCommunity}
+                            />
+                          </div>
+
+                          <div>
+                            <label className="text-sm font-medium text-foreground block mb-2">
+                              Community Description
+                            </label>
+                            <Textarea
+                              placeholder="Community Description"
+                              value={ownerSettingsDescription}
+                              onChange={(e) => setOwnerSettingsDescription(e.target.value)}
+                              disabled={isUpdatingCommunity || isDeletingCommunity}
+                              className="min-h-[100px]"
+                            />
+                          </div>
+
+                          <div className="flex gap-2 pt-4">
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsOwnerSettingsModalOpen(false)}
+                              className="flex-1"
+                              disabled={isUpdatingCommunity || isDeletingCommunity}
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              className="flex-1 bg-primary hover:bg-primary/90"
+                              onClick={handleUpdateCommunity}
+                              disabled={isUpdatingCommunity || isDeletingCommunity}
+                            >
+                              {isUpdatingCommunity ? "Updating..." : "Update Community"}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={handleDeleteCommunity}
+                              disabled={isUpdatingCommunity || isDeletingCommunity}
+                            >
+                              {isDeletingCommunity ? "Deleting..." : "Delete"}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  ) : isMemberOfCommunity ? (
                     <button
-                      className="flex w-full sm:w-auto cursor-pointer items-center justify-center overflow-hidden rounded-lg h-9 px-4 bg-muted text-foreground text-xs sm:text-sm font-medium leading-normal hover:bg-muted/80 transition-all"
+                      className="flex w-full sm:w-auto cursor-pointer items-center justify-center overflow-hidden rounded-lg h-7 px-4 bg-muted text-foreground text-xs sm:text-sm font-medium leading-normal hover:bg-muted/50 transition-all"
                       onClick={handleLeaveCommunity}
                       disabled={leaveLoading}
                     >
@@ -414,7 +720,14 @@ function CommunityDashboard() {
                   Knowledge Graph
                 </h2>
                 <div className="w-full h-[300px] sm:h-[350px] md:h-[400px] overflow-hidden rounded-lg">
-                  <KnowledgeGraph onExpand={() => setIsGraphModalOpen(true)} isExpanded={false} />
+                  <KnowledgeGraph 
+                    onExpand={() => setIsGraphModalOpen(true)} 
+                    isExpanded={false} 
+                    graphData={graphData || { nodes: [], edges: [] }} 
+                    onUpdate={handleGraphUpdate}
+                    onDelete={handleGraphDelete}
+                    onOpenEditModal={handleOpenEditModal}
+                  />
                 </div>
               </div>
             </div>
@@ -554,6 +867,7 @@ function CommunityDashboard() {
                               )
                             }
                           />
+                          {index > 0 && (
                           <Button
                             variant="ghost"
                             onClick={() => removeNodeProperty(index)}
@@ -561,6 +875,7 @@ function CommunityDashboard() {
                           >
                             ✕
                           </Button>
+                        )}
                         </div>
                       ))
                     )}
@@ -679,7 +994,13 @@ function CommunityDashboard() {
             <DialogDescription>Explore the interactive knowledge graph visualization of this community.</DialogDescription>
           </DialogHeader>
           <div className="flex-1 overflow-hidden w-full h-full">
-            <KnowledgeGraph isExpanded={true} />
+            <KnowledgeGraph 
+              isExpanded={true} 
+              graphData={graphData} 
+              onUpdate={handleGraphUpdate}
+              onDelete={handleGraphDelete}
+              onOpenEditModal={handleOpenEditModal}
+            />
           </div>
         </DialogContent>
       </Dialog>
@@ -765,6 +1086,179 @@ function CommunityDashboard() {
               </div>
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Node/Edge Modal */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="w-[95vw] sm:max-w-[450px] rounded-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold">
+              Edit {editModalData?.type === 'node' ? 'Node' : 'Edge'}
+            </DialogTitle>
+            <DialogDescription>Update the information of this {editModalData?.type}.</DialogDescription>
+          </DialogHeader>
+
+          {editModalData && (
+            <div className="space-y-3">
+              {editModalData.type === 'node' ? (
+                // NODE EDIT FORM
+                <div className="space-y-3">
+                  <Input
+                    id="editNodeName"
+                    placeholder="Node Name (required)"
+                    value={editModalData.data.label || ''}
+                    onChange={(e) => {
+                      setEditModalData({
+                        ...editModalData,
+                        data: {
+                          ...editModalData.data,
+                          label: e.target.value,
+                        },
+                      });
+                    }}
+                  />
+                  <Input
+                    id="editNodeLabels"
+                    placeholder="Labels (comma separated)"
+                    value={(editModalData.data.labels || []).join(",")}
+                    onChange={(e) => {
+                      setEditModalData({
+                        ...editModalData,
+                        data: {
+                          ...editModalData.data,
+                          labels: e.target.value.split(",").map((l) => l.trim()).filter(l => l),
+                        },
+                      });
+                    }}
+                  />
+                </div>
+              ) : (
+                // EDGE EDIT FORM
+                <div>
+                  <Input
+                    id="editEdgeType"
+                    placeholder="Edge Type (required)"
+                    value={editModalData.data.label || ''}
+                    onChange={(e) => {
+                      setEditModalData({
+                        ...editModalData,
+                        data: {
+                          ...editModalData.data,
+                          label: e.target.value,
+                        },
+                      });
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Properties */}
+              <div className="space-y-2">
+                <p className="text-sm text-muted-foreground font-medium">
+                  Properties
+                </p>
+
+                {editModalData.properties.length === 0 ? (
+                  <p className="text-xs text-muted-foreground italic">
+                    No properties yet. Click below to add.
+                  </p>
+                ) : (
+                  editModalData.properties.map((prop, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder="Key"
+                        value={prop.key}
+                        onChange={(e) => {
+                          const updated = [...editModalData.properties];
+                          updated[index].key = e.target.value;
+                          setEditModalData({
+                            ...editModalData,
+                            properties: updated,
+                          });
+                        }}
+                      />
+                      <Input
+                        placeholder="Value"
+                        value={prop.value}
+                        onChange={(e) => {
+                          const updated = [...editModalData.properties];
+                          updated[index].value = e.target.value;
+                          setEditModalData({
+                            ...editModalData,
+                            properties: updated,
+                          });
+                        }}
+                      />
+                      {index > 0 && (
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
+                            const updated = editModalData.properties.filter(
+                              (_, i) => i !== index
+                            );
+                            setEditModalData({
+                              ...editModalData,
+                              properties: updated,
+                            });
+                          }}
+                          className="text-red-500"
+                        >
+                          ✕
+                        </Button>
+                      )}
+                    </div>
+                  ))
+                )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setEditModalData({
+                      ...editModalData,
+                      properties: [...editModalData.properties, { key: "", value: "" }],
+                    });
+                  }}
+                  className="text-primary border-purple-300 hover:bg-purple-50"
+                >
+                  + Add Property
+                </Button>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-primary hover:bg-primary/90"
+                  onClick={() => {
+                    const details: { key: string; value: string }[] = [];
+                    editModalData.properties.forEach((prop) => {
+                      if (prop.key.trim() && prop.value.trim()) {
+                        details.push({ key: prop.key, value: prop.value });
+                      }
+                    });
+
+                    const updatedData = {
+                      ...editModalData.data,
+                      details,
+                    };
+
+                    handleGraphUpdate(editModalData.type, updatedData);
+                    setIsEditModalOpen(false);
+                  }}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -22,6 +22,7 @@ interface Comment {
   content: string;
   createdAt: Date;
   parentCommentId: string;
+  voteCount: number;
 }
 
 interface Post {
@@ -35,18 +36,19 @@ interface Post {
 }
 
 interface Node {
-  id?: string;
+  id: string;
   labels: string[];
   name: string;
-  properties: { key: string; value: any }[];
+  properties: { [key: string]: any };
 }
 
+
 interface Edge {
-  id?: string;
+  id: string;
   sourceId: string;
   targetId: string;
   type: string;
-  properties: { key: string; value: any }[];
+  properties: { [key: string]: any };
 }
 
 interface NodeProposal {
@@ -57,7 +59,7 @@ interface NodeProposal {
   communityName?: string;
   name: string;
   labels: string[];
-  properties: { key: string; value: any }[]
+  properties: { [key: string]: any };
   status: "PENDING" | "APPROVED" | "REJECTED";
   createdAt: Date;
   upvotes: number;
@@ -72,7 +74,7 @@ interface EdgeProposal {
   communityId?: string;
   communityName?: string;
   type: string;
-  properties: { key: string; value: any }[];
+  properties: { [key: string]: any };
   status: "PENDING" | "APPROVED" | "REJECTED";
   createdAt: Date;
   upvotes: number;

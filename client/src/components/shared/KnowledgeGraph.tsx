@@ -1,11 +1,15 @@
 import React, { useRef, useEffect, useMemo, useState } from "react";
 import ForceGraph2D from "react-force-graph-2d";
-import { dummyNodes, dummyEdges } from "../../services/data";
 import { useTheme } from "@/context/ThemeContext";
+import type { Edge, Node } from "@/schema";
 
-const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> = ({ 
+const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean; graphData: { nodes: any[]; edges: any[] }; onUpdate?: (type: 'node' | 'edge', data: any) => void; onDelete?: (type: 'node' | 'edge', id: string) => void; onOpenEditModal?: (type: 'node' | 'edge', data: any) => void }> = ({ 
   onExpand, 
-  isExpanded = false 
+  isExpanded = false,
+  graphData: { nodes: dummyNodes, edges: dummyEdges },
+  onUpdate,
+  onDelete,
+  onOpenEditModal
 }) => {
   const fgRef = useRef<any>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -17,6 +21,7 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [selectedResult, setSelectedResult] = useState<any>(null);
   const [searchType, setSearchType] = useState<'all' | 'nodes' | 'edges'>('all');
+  const [modalState, setModalState] = useState<{ type: 'node' | 'edge'; action: 'update' | 'delete'; data: any } | null>(null);
   const { theme } = useTheme();
 
   // Responsive sizing: adapt based on container size
@@ -40,7 +45,8 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
         id: node.id,
         label: node.name || "Unnamed",
         group: node.labels[0],
-        details: node.properties,
+        labels: node.labels,
+        details: Object.entries(node.properties).map(([key, value]) => ({ key, value })),
         color: NODE_COLOR,
       })),
       links: dummyEdges.map((edge) => ({
@@ -48,7 +54,7 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
         source: edge.sourceId,
         target: edge.targetId,
         label: edge.type,
-        details: edge.properties,
+        details: Object.entries(edge.properties).map(([key, value]) => ({ key, value })),
         color: LINK_COLOR,
         width: LINK_WIDTH,
       })),
@@ -71,7 +77,7 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
     // Search nodes
     if (searchType === 'all' || searchType === 'nodes') {
       graphData.nodes.forEach(node => {
-        if (node.label.toLowerCase().includes(query) || node.id.toLowerCase().includes(query)) {
+        if (node.label.toLowerCase().includes(query) || node.id?.toLowerCase().includes(query)) {
           results.push({
             type: 'node',
             ...node,
@@ -119,7 +125,7 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
       if (node) {
         fgRef.current.centerAt(node.x, node.y, 500);
         fgRef.current.zoom(isSmall ? 8 : 12, 500);
-        showInfo(node.label, node.group, node.id, node.details);
+        showInfo(node.label, node.group, node.id || "", node.details, 'node', node);
       }
     } else {
       const link = graphData.links.find(l => l.id === result.id);
@@ -128,7 +134,7 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
         const midY = ((link.source?.y || 0) + (link.target?.y || 0)) / 2;
         fgRef.current.centerAt(midX, midY, 500);
         fgRef.current.zoom(isSmall ? 8 : 12, 500);
-        showInfo(link.label, 'Edge', link.id, link.details);
+        showInfo(link.label, 'Edge', link.id, link.details, 'edge', link);
       }
     }
   };
@@ -171,6 +177,12 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
     return () => window.removeEventListener("mousemove", move);
   }, []);
 
+  // Render properties in edit modal
+  useEffect(() => {
+    // Edit modal is now handled by parent component
+    return;
+  }, []);
+
   // Close info box
   const closeInfo = () => {
     const info = infoRef.current;
@@ -186,15 +198,31 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
     title: string,
     type: string,
     id: string,
-    details: any[]
+    details: any[],
+    itemType: 'node' | 'edge' = 'node',
+    itemData: any = {}
   ) => {
     const info = infoRef.current;
     if (!info) return;
 
     const html = `
-      <div style="font-weight:700;font-size:1.1rem;margin-bottom:8px;color:${
-        theme.colors.primary
-      };">${title}</div>
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div style="display:flex;gap:4px;align-items:center;position:relative;">
+          <button id="menuBtn" style="background:none;border:none;color:${
+            theme.colors.textSecondary
+          };cursor:pointer;font-size:1.2rem;padding:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">⋮</button>
+          <div id="menuDropdown" style="display:none;position:absolute;top:30px;left:0;background:${theme.colors.cardBg};border:1px solid ${theme.colors.border};border-radius:6px;min-width:120px;box-shadow:0 4px 12px rgba(0,0,0,0.2);z-index:1001;">
+            <button id="menuUpdate" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;color:${theme.colors.text};cursor:pointer;font-size:0.875rem;transition:all 0.2s;border-bottom:1px solid ${theme.colors.border};">Edit</button>
+            <button id="menuDelete" style="display:block;width:100%;text-align:left;padding:8px 12px;border:none;background:none;color:#ef4444;cursor:pointer;font-size:0.875rem;transition:all 0.2s;">Delete</button>
+          </div>
+        </div>
+        <div style="font-weight:700;font-size:1.1rem;color:${
+          theme.colors.primary
+        };">${title}</div>
+        <button id="closeInfoBtn" style="background:none;border:none;color:${
+          theme.colors.textSecondary
+        };cursor:pointer;font-size:1.2rem;padding:0;width:20px;height:20px;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">✕</button>
+      </div>
       <div style="color:${
         theme.colors.textSecondary
       };font-size:0.85rem;margin-bottom:4px;"><span style="font-weight:600;">Type:</span> ${type}</div>
@@ -216,27 +244,84 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
               .join("")
           : `<div style="color:${theme.colors.textSecondary};font-style:italic;margin:8px 0;">No properties</div>`
       }
-      <button id="closeInfoBtn" style="margin-top:12px;background:${
-        theme.colors.primary
-      };border:none;color:${
-      theme.colors.background
-    };border-radius:8px;padding:8px 12px;cursor:pointer;width:100%;font-weight:600;font-size:0.875rem;transition:all 0.2s;">Close</button>
     `;
 
     info.innerHTML = html;
     info.style.opacity = "1";
     info.style.pointerEvents = "auto";
 
-    // Close button handler - use setTimeout to ensure DOM is updated
+    // Button handlers - use setTimeout to ensure DOM is updated
     setTimeout(() => {
+      const menuBtn = info.querySelector("#menuBtn");
+      const menuDropdown = info.querySelector("#menuDropdown");
+      
+      if (menuBtn && menuDropdown) {
+        menuBtn.addEventListener("mouseover", () => {
+          (menuBtn as HTMLElement).style.color = theme.colors.primary;
+        });
+        menuBtn.addEventListener("mouseout", () => {
+          (menuBtn as HTMLElement).style.color = theme.colors.textSecondary;
+        });
+        menuBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          const isVisible = menuDropdown.getAttribute("data-visible") === "true";
+          if (isVisible) {
+            menuDropdown.setAttribute("data-visible", "false");
+            (menuDropdown as HTMLElement).style.display = "none";
+          } else {
+            menuDropdown.setAttribute("data-visible", "true");
+            (menuDropdown as HTMLElement).style.display = "block";
+          }
+        });
+      }
+
+      const menuUpdate = info.querySelector("#menuUpdate");
+      if (menuUpdate) {
+        menuUpdate.addEventListener("mouseover", () => {
+          (menuUpdate as HTMLElement).style.background = `${theme.colors.primary}15`;
+        });
+        menuUpdate.addEventListener("mouseout", () => {
+          (menuUpdate as HTMLElement).style.background = "none";
+        });
+        menuUpdate.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (menuDropdown) {
+            (menuDropdown as HTMLElement).style.display = "none";
+          }
+          // Call the parent callback to open edit modal
+          if (onOpenEditModal) {
+            onOpenEditModal(itemType, itemData);
+          }
+        });
+      }
+
+      const menuDelete = info.querySelector("#menuDelete");
+      if (menuDelete) {
+        menuDelete.addEventListener("mouseover", () => {
+          (menuDelete as HTMLElement).style.background = "#fee2e2";
+        });
+        menuDelete.addEventListener("mouseout", () => {
+          (menuDelete as HTMLElement).style.background = "none";
+        });
+        menuDelete.addEventListener("click", (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          if (menuDropdown) {
+            (menuDropdown as HTMLElement).style.display = "none";
+          }
+          setModalState({ type: itemType, action: 'delete', data: itemData });
+        });
+      }
+
       const closeBtn = info.querySelector("#closeInfoBtn");
       if (closeBtn) {
         closeBtn.addEventListener("mouseover", () => {
-          (closeBtn as HTMLElement).style.background =
-            theme.colors.primaryLight || theme.colors.primary;
+          (closeBtn as HTMLElement).style.color = theme.colors.primary;
         });
         closeBtn.addEventListener("mouseout", () => {
-          (closeBtn as HTMLElement).style.background = theme.colors.primary;
+          (closeBtn as HTMLElement).style.color = theme.colors.textSecondary;
         });
         closeBtn.addEventListener("click", (e) => {
           e.preventDefault();
@@ -271,11 +356,11 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
         }}
         onNodeClick={(node) => {
           setSelectedResult({ type: 'node', ...node });
-          showInfo(node.label, node.group, node.id || "", node.details);
+          showInfo(node.label, node.group, node.id || "", node.details, 'node', node);
         }}
         onLinkClick={(link) => {
           setSelectedResult({ type: 'edge', ...link });
-          showInfo(link.label, "Edge", link.id || "", link.details);
+          showInfo(link.label, "Edge", link.id || "", link.details, 'edge', link);
         }}
         onNodeHover={(node) => {
           if (node) {
@@ -535,7 +620,7 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
                 fontWeight: searchType === filter ? "600" : "500",
                 border: "none",
                 borderRadius: "6px",
-                background: searchType === filter ? theme.colors.primary : theme.colors.muted,
+                background: searchType === filter ? theme.colors.primary : theme.colors.background,
                 color: searchType === filter ? theme.colors.background : theme.colors.text,
                 cursor: "pointer",
                 transition: "all 0.2s ease",
@@ -548,7 +633,7 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
               }}
               onMouseLeave={(e) => {
                 if (searchType !== filter) {
-                  e.currentTarget.style.background = theme.colors.muted;
+                  e.currentTarget.style.background = theme.colors.background;
                 }
               }}
             >
@@ -647,41 +732,6 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
           flexWrap: "wrap",
         }}
       >
-        {/* Reset View Button */}
-        <button
-          onClick={handleResetView}
-          style={{
-            background: theme.colors.primary,
-            color: theme.colors.background,
-            border: "none",
-            borderRadius: "50%",
-            width: buttonSize,
-            height: buttonSize,
-            cursor: "pointer",
-            boxShadow: "0 4px 12px rgba(0,0,0,0.4)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: buttonFontSize,
-            fontWeight: "bold",
-            transition: "all 0.2s ease",
-            padding: 0,
-            minWidth: buttonSize,
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background =
-              theme.colors.primaryLight || theme.colors.primary;
-            e.currentTarget.style.transform = "scale(1.05)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = theme.colors.primary;
-            e.currentTarget.style.transform = "scale(1)";
-          }}
-          title="Reset view"
-        >
-          ↺
-        </button>
-
         {/* Zoom Toggle Button */}
         <button
           onClick={handleCenterGraph}
@@ -788,6 +838,160 @@ const KnowledgeGraph: React.FC<{ onExpand?: () => void; isExpanded?: boolean }> 
           Click nodes to explore
         </div>
       )}
+
+      {/* Update/Delete Modal */}
+      {modalState && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0, 0, 0, 0.5)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 1000,
+          }}
+          onClick={() => setModalState(null)}
+        >
+          <div
+            style={{
+              background: theme.colors.cardBg,
+              borderRadius: "12px",
+              padding: "24px",
+              maxWidth: "400px",
+              width: "90%",
+              border: `1px solid ${theme.colors.border}`,
+              boxShadow: "0 20px 25px rgba(0,0,0,0.3)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 style={{ color: theme.colors.text, marginBottom: "16px", fontSize: "1.2rem", fontWeight: "700" }}>
+              {modalState.action === 'update' ? 'Update' : 'Delete'} {modalState.type === 'node' ? 'Node' : 'Edge'}
+            </h2>
+
+            {modalState.action === 'update' ? (
+              <div>
+                <p style={{ color: theme.colors.textSecondary, marginBottom: "16px", fontSize: "0.9rem" }}>
+                  Are you sure you want to update this {modalState.type}? This will create an UPDATE proposal.
+                </p>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => setModalState(null)}
+                    style={{
+                      flex: 1,
+                      padding: "10px 16px",
+                      border: `1px solid ${theme.colors.border}`,
+                      background: theme.colors.background,
+                      color: theme.colors.text,
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "0.9rem",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = `${theme.colors.primary}15`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = theme.colors.background;
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      onUpdate?.(modalState.type, { ...modalState.data, action: 'UPDATE' });
+                      setModalState(null);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "10px 16px",
+                      border: "none",
+                      background: theme.colors.primary,
+                      color: theme.colors.background,
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "0.9rem",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = theme.colors.primaryLight || theme.colors.primary;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = theme.colors.primary;
+                    }}
+                  >
+                    Update
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p style={{ color: theme.colors.textSecondary, marginBottom: "16px", fontSize: "0.9rem" }}>
+                  Are you sure you want to delete this {modalState.type}? This will create a DELETE proposal.
+                </p>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button
+                    onClick={() => setModalState(null)}
+                    style={{
+                      flex: 1,
+                      padding: "10px 16px",
+                      border: `1px solid ${theme.colors.border}`,
+                      background: theme.colors.background,
+                      color: theme.colors.text,
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "0.9rem",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = `${theme.colors.primary}15`;
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = theme.colors.background;
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => {
+                      onDelete?.(modalState.type, modalState.data);
+                      setModalState(null);
+                    }}
+                    style={{
+                      flex: 1,
+                      padding: "10px 16px",
+                      border: "none",
+                      background: "#ef4444",
+                      color: "#fff",
+                      borderRadius: "8px",
+                      cursor: "pointer",
+                      fontWeight: "600",
+                      fontSize: "0.9rem",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#dc2626";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "#ef4444";
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Node/Edge Modal - Handled in parent component */}
     </div>
   );
 };
