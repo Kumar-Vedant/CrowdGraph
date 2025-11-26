@@ -161,23 +161,14 @@ const communityJoinUser = async (req, res) => {
 
   try {
     // transaction to ensure both creations happen together
-    await prisma.$transaction([
-      prisma.userCommunity.create({
-        data: {
-          userId: userId,
-          communityId: id,
-          role: Role.MEMBER,
-        },
-      }),
-      prisma.userCommunityReputation.create({
-        data: {
-          userId: userId,
-          communityId: id,
-        },
-      }),
-    ]);
-
-    res.status(200).json({ success: true });
+    await prisma.userCommunity.create({
+      data: {
+        userId: userId,
+        communityId: id,
+        role: Role.MEMBER,
+      },
+    }),
+      res.status(200).json({ success: true });
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -208,18 +199,11 @@ const communityLeaveUser = async (req, res) => {
     }
 
     // transaction to ensure both deletes happen together
-    await prisma.$transaction([
-      prisma.userCommunity.delete({
-        where: {
-          userId_communityId: { userId, communityId: id },
-        },
-      }),
-      prisma.userCommunityReputation.delete({
-        where: {
-          userId_communityId: { userId, communityId: id },
-        },
-      }),
-    ]);
+    await prisma.userCommunity.delete({
+      where: {
+        userId_communityId: { userId, communityId: id },
+      },
+    });
 
     res.status(200).json({ success: true });
   } catch (error) {
@@ -254,7 +238,7 @@ const communityCreate = async (req, res) => {
       },
     });
 
-    // create entries in userCommunity and userCommunityReputation for the owner
+    // create entries in userCommunity for the owner
     await prisma.userCommunity.create({
       data: {
         userId: ownerId,
@@ -262,13 +246,6 @@ const communityCreate = async (req, res) => {
         role: Role.OWNER,
       },
     });
-    await prisma.userCommunityReputation.create({
-      data: {
-        userId: ownerId,
-        communityId: (await newCommunity).id,
-      },
-    });
-
     res.status(200).json({
       success: true,
       data: newCommunity,

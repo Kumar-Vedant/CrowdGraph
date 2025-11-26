@@ -1,7 +1,8 @@
 import driver from "../db/neo4j.js";
 import { recomputeNodeEmbedding } from "../utils/embedding.js";
 import { checkProposal } from "../utils/checkProposal.js";
-import pkg, { TargetType, ProposalStatus } from "@prisma/client";
+import pkg, { TargetType, ProposalStatus, ProposalType } from "@prisma/client";
+import { error } from "neo4j-driver";
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
@@ -14,10 +15,12 @@ const nodeGetAll = async (req, res) => {
 
     const nodes = result.records.map((record) => {
       const node = record.get("n");
+      const { name, embedding, ...rest } = node.properties;
       return {
         id: node.elementId,
+        name: name,
         labels: node.labels,
-        properties: node.properties,
+        properties: rest,
       };
     });
 
@@ -45,17 +48,96 @@ const nodeGet = async (req, res) => {
     const result = await session.executeRead((tx) => tx.run(`MATCH (n) WHERE elementId(n) = $id RETURN n`, { id }));
 
     if (result.records.length === 0) {
-      return res.status(404).send("Node not found");
+      return res.status(404).json({
+        success: false,
+        error: "Node not found",
+      });
     }
 
     const node = result.records[0].get("n");
+    const { name, embedding, ...rest } = node.properties;
     const nodeData = {
       id: node.elementId,
+      name: name,
       labels: node.labels,
-      properties: node.properties,
+      properties: rest,
     };
 
-    res.status(200).send(nodeData);
+    res.status(200).json({
+      success: true,
+      data: nodeData,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      error,
+    });
+  } finally {
+    await session.close();
+  }
+};
+
+const nodeCommunityGraphGet = async (req, res) => {
+  const { communityId } = req.params;
+  const session = driver.session();
+
+  try {
+    const result = await session.executeRead((tx) =>
+      tx.run(
+        `
+        MATCH (n)
+        WHERE n.communityId = $communityId
+        WITH collect(n) AS nodes
+    
+        OPTIONAL MATCH (a)-[r]->(b)
+        WHERE r.communityId = $communityId
+        RETURN nodes, collect(r) AS edges
+        `,
+        { communityId }
+      )
+    );
+
+    if (!result.records || result.records.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No graph found",
+      });
+    }
+
+    const record = result.records[0];
+
+    const nodes = record.has("nodes") ? record.get("nodes") : [];
+    const edges = record.has("edges") ? record.get("edges") : [];
+
+    const nodeData = nodes.map((node) => {
+      const { name, embedding, ...rest } = node.properties;
+
+      return {
+        id: node.elementId,
+        name: name,
+        labels: node.labels,
+        properties: rest,
+      };
+    });
+
+    const edgeData = edges.map((rel) => {
+      return {
+        id: rel.elementId,
+        sourceId: rel.startNodeElementId,
+        targetId: rel.endNodeElementId,
+        type: rel.type,
+        properties: rel.properties,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        nodes: nodeData,
+        edges: edgeData,
+      },
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -78,7 +160,10 @@ const nodeSearch = async (req, res) => {
     );
 
     if (result.records.length === 0) {
-      return res.status(404).send("Node not found");
+      return res.status(404).json({
+        success: false,
+        error: "Node not found",
+      });
     }
     const nodes = result.records.map((record) => {
       const node = record.get("n");
@@ -91,7 +176,11 @@ const nodeSearch = async (req, res) => {
       };
     });
 
-    res.status(200).send(nodes);
+    res.status(200).json({
+      success: true,
+      count: nodes.length,
+      data: nodes,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -123,8 +212,10 @@ const nodeProposalCommunityGet = async (req, res) => {
         name: true,
         labels: true,
         properties: true,
+        proposalType: true,
         status: true,
         createdAt: true,
+        kgNodeId: true,
         upvotes: true,
         downvotes: true,
       },
@@ -150,13 +241,19 @@ const nodeCreate = async (req, res) => {
   const { labels, properties } = req.body;
 
   if (!Array.isArray(labels) || labels.length === 0) {
-    return res.status(400).send("At least one label required");
+    return res.status(400).json({
+      success: false,
+      error: "At least one label required",
+    });
   }
 
   // sanitize labels (to prevent Cypher injection)
   const sanitizedLabels = labels.map((l) => l.replace(/[^A-Za-z0-9_]/g, "")).filter(Boolean);
   if (sanitizedLabels.length === 0) {
-    return res.status(400).send("At least one valid label required");
+    return res.status(400).json({
+      success: false,
+      error: "At least one label required",
+    });
   }
   const labelString = sanitizedLabels.map((l) => `:${l}`).join("") + ":Searchable";
 
@@ -168,7 +265,10 @@ const nodeCreate = async (req, res) => {
     const result = await session.executeWrite((tx) => tx.run(query, { props: properties }));
 
     if (result.records.length === 0) {
-      return res.status(500).send("Failed to create node");
+      return res.status(500).json({
+        success: false,
+        error: "Failed to create node",
+      });
     }
 
     const record = result.records[0];
@@ -178,10 +278,17 @@ const nodeCreate = async (req, res) => {
     // compute embedding
     await recomputeNodeEmbedding(nodeId);
 
-    return res.status(201).json({
+    const { name, embedding, ...rest } = node.properties;
+    const nodeData = {
       id: node.elementId,
+      name: name,
       labels: node.labels,
-      properties: node.properties,
+      properties: rest,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: nodeData,
     });
   } catch (error) {
     console.error(error);
@@ -195,7 +302,7 @@ const nodeCreate = async (req, res) => {
 };
 
 const nodeProposalCreate = async (req, res) => {
-  const { userId, name, communityId, labels, properties } = req.body;
+  const { userId, name, communityId, labels, properties, proposalType, kgNodeId } = req.body;
 
   if (!Array.isArray(labels) || labels.length === 0) {
     return res.status(400).json({
@@ -207,7 +314,10 @@ const nodeProposalCreate = async (req, res) => {
   // sanitize labels (to prevent Cypher/SQL injection)
   const sanitizedLabels = labels.map((l) => l.replace(/[^A-Za-z0-9_]/g, "")).filter(Boolean);
   if (sanitizedLabels.length === 0) {
-    return res.status(400).send("At least one valid label required");
+    return res.status(400).json({
+      success: false,
+      error: "At least one valid label required",
+    });
   }
 
   try {
@@ -218,6 +328,8 @@ const nodeProposalCreate = async (req, res) => {
         name: name,
         labels: labels,
         properties: properties,
+        proposalType: proposalType,
+        kgNodeId: kgNodeId || null,
       },
       select: {
         id: true,
@@ -231,8 +343,10 @@ const nodeProposalCreate = async (req, res) => {
         name: true,
         labels: true,
         properties: true,
+        proposalType: true,
         status: true,
         createdAt: true,
+        kgNodeId: true,
         upvotes: true,
         downvotes: true,
       },
@@ -364,8 +478,15 @@ const nodeProposalVote = async (req, res) => {
 
     // if accepted
     if (status === "ACCEPT") {
-      // add the node in the Knowledge Graph
-      const nodeId = await addNode(updatedProposal.name, updatedProposal.communityId, updatedProposal.labels, updatedProposal.properties);
+      let nodeId;
+      // based on ProposalType, add, update or delete node
+      if (nodeProposal.proposalType === ProposalType.CREATE) {
+        nodeId = await addNode(updatedProposal.name, updatedProposal.communityId, updatedProposal.labels, updatedProposal.properties);
+      } else if (nodeProposal.proposalType === ProposalType.UPDATE) {
+        nodeId = await updateNode(updatedProposal.kgNodeId, updatedProposal.labels, updatedProposal.properties);
+      } else {
+        nodeId = await deleteNode(updatedProposal.kgNodeId);
+      }
 
       await prisma.nodeProposal.update({
         where: {
@@ -431,8 +552,10 @@ const nodeProposalVote = async (req, res) => {
         name: true,
         labels: true,
         properties: true,
+        proposalType: true,
         status: true,
         createdAt: true,
+        kgNodeId: true,
         upvotes: true,
         downvotes: true,
       },
@@ -464,7 +587,10 @@ const nodeUpdate = async (req, res) => {
 
     const nodeRecord = record.records[0];
     if (!nodeRecord) {
-      return res.status(404).send("Node not found");
+      return res.status(404).json({
+        success: false,
+        error: "Node not found",
+      });
     }
 
     const node = nodeRecord.get("n");
@@ -502,9 +628,19 @@ const nodeUpdate = async (req, res) => {
 
     const updatedNode = updatedRecord.records[0].get("n");
 
+    const { name, embedding, ...rest } = updatedNode.properties;
+    const nodeData = {
+      id: node.elementId,
+      name: name,
+      labels: node.labels,
+      properties: rest,
+    };
     await recomputeNodeEmbedding(id);
 
-    return res.status(200).send(updatedNode);
+    res.status(200).json({
+      success: true,
+      data: nodeData,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -537,10 +673,15 @@ const nodeDelete = async (req, res) => {
     const deletedCount = result.records[0].get("deletedCount").toNumber?.() ?? 0;
 
     if (deletedCount === 0) {
-      return res.status(404).send("Node not found");
+      return res.status(404).json({
+        success: false,
+        error: "Node not found",
+      });
     }
 
-    res.status(200).send(`Node with id ${id} deleted successfully`);
+    res.status(200).json({
+      success: true,
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -558,14 +699,12 @@ async function addNode(name, communityId, labels, properties) {
   const session = driver.session();
 
   if (!Array.isArray(labels) || labels.length === 0) {
-    return res.status(400).send("At least one label required");
+    return;
   }
 
   // sanitize labels (to prevent Cypher injection)
   const sanitizedLabels = labels.map((l) => l.replace(/[^A-Za-z0-9_]/g, "")).filter(Boolean);
-  if (sanitizedLabels.length === 0) {
-    return res.status(400).send("At least one valid label required");
-  }
+  if (sanitizedLabels.length === 0) return;
   const labelString = sanitizedLabels.map((l) => `:${l}`).join("") + ":Searchable";
 
   properties.name = name;
@@ -578,9 +717,7 @@ async function addNode(name, communityId, labels, properties) {
     `;
     const result = await session.executeWrite((tx) => tx.run(query, { props: properties }));
 
-    if (result.records.length === 0) {
-      return res.status(500).send("Failed to create node");
-    }
+    if (result.records.length === 0) return;
 
     const record = result.records[0];
     const nodeId = record.get("nodeId");
@@ -596,9 +733,91 @@ async function addNode(name, communityId, labels, properties) {
   }
 }
 
+async function updateNode(id, labels, properties) {
+  const session = driver.session();
+  try {
+    const record = await session.executeRead((tx) => tx.run("MATCH (n) WHERE elementId(n) = $id RETURN n, labels(n) AS currentLabels", { id: id }));
+
+    const nodeRecord = record.records[0];
+    if (!nodeRecord) return;
+
+    const node = nodeRecord.get("n");
+    const currentLabels = nodeRecord.get("currentLabels");
+
+    // set updated properties
+    let newProps = { ...node.properties, ...(properties || {}) };
+    delete newProps.embedding;
+
+    // if no labels are given, keep the previous ones. Else update them to new ones
+    let newLabels = currentLabels;
+    if (Array.isArray(labels) && labels.length > 0) {
+      newLabels = labels.map((l) => l.replace(/[^A-Za-z0-9_]/g, "")).filter(Boolean);
+    }
+    newLabels.push("Searchable");
+
+    // update query to modify properties, remove and add labels as required
+    const query = `
+      MATCH (n)
+      WHERE elementId(n) = $id
+      SET n = $props
+      WITH n
+      ${currentLabels
+        .filter((l) => !newLabels.includes(l))
+        .map((l) => `REMOVE n:${l}`)
+        .join("\n")}
+      ${newLabels
+        .filter((l) => !currentLabels.includes(l))
+        .map((l) => `SET n:${l}`)
+        .join("\n")}
+      RETURN n
+    `;
+
+    const updatedNodeResult = await session.executeWrite((tx) => tx.run(query, { id: id, props: newProps }));
+    if (updatedNodeResult.records.length === 0) return;
+
+    await recomputeNodeEmbedding(id);
+
+    return id;
+  } catch (error) {
+    console.error(error);
+  } finally {
+    await session.close();
+  }
+}
+
+async function deleteNode(id) {
+  const session = driver.session();
+
+  try {
+    const result = await session.executeWrite((tx) =>
+      tx.run(
+        `
+        MATCH (n)
+        WHERE elementId(n) = $id
+        DETACH DELETE n
+        RETURN COUNT(n) AS deletedCount
+        `,
+        { id }
+      )
+    );
+
+    // Neo4j returns COUNT(n) = 0 if no node matched
+    const deletedCount = result.records[0].get("deletedCount").toNumber?.() ?? 0;
+
+    if (deletedCount === 0) return;
+
+    return id;
+  } catch (error) {
+    console.error(error);
+  } finally {
+    await session.close();
+  }
+}
+
 export default {
   nodeGetAll,
   nodeGet,
+  nodeCommunityGraphGet,
   nodeSearch,
   nodeProposalCommunityGet,
   nodeCreate,

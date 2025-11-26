@@ -26,21 +26,23 @@ async def root():
 async def query_graph(request: Request):
     data = await request.json()
     question = data.get("question")
+    community_id = data.get("communityId")
 
     if not question:
         return {"error": "Missing 'question' field in request body"}
 
     try:
         # LangGraph app is synchronous — run in executor if needed
-        response = await asyncio.to_thread(graph_app.invoke, {"question": question})
+        response = await asyncio.to_thread(graph_app.invoke, {"question": question, "community_id": community_id})
 
         answer = response.get("answer", "No answer generated.")
-        context = response.get("context", [])
+        node_ids = response.get("node_ids", [])
+        edge_ids = response.get("edge_ids", [])
 
         return {
-            "question": question,
             "answer": answer,
-            "context": context
+            "node_ids": node_ids,
+            "edge_ids": edge_ids
         }
 
     except Exception as e:

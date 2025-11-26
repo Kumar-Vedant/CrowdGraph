@@ -1,7 +1,11 @@
-import { TargetType } from "@prisma/client";
 import driver from "../db/neo4j.js";
 import { recomputeNodeEmbedding } from "../utils/embedding.js";
 import { checkProposal } from "../utils/checkProposal.js";
+
+import pkg, { TargetType, ProposalStatus } from "@prisma/client";
+const { PrismaClient } = pkg;
+
+const prisma = new PrismaClient();
 
 const edgeGet = async (req, res) => {
   const session = driver.session();
@@ -18,7 +22,10 @@ const edgeGet = async (req, res) => {
     const result = await session.executeRead((tx) => tx.run(query, { relId: id }));
 
     if (result.records.length === 0) {
-      return res.status(404).send("Relationship not found");
+      return res.status(404).json({
+        success: false,
+        error: "Edge not found",
+      });
     }
 
     const record = result.records[0];
@@ -26,28 +33,24 @@ const edgeGet = async (req, res) => {
     const nodeA = record.get("a");
     const nodeB = record.get("b");
 
+    const edgeData = {
+      id: rel.elementId,
+      sourceId: nodeA.elementId,
+      targetId: nodeB.elementId,
+      type: rel.type,
+      properties: rel.properties,
+    };
+
     return res.status(200).json({
-      relationship: {
-        elementId: rel.elementId,
-        type: rel.type,
-        properties: rel.properties,
-      },
-      nodes: [
-        {
-          elementId: nodeA.elementId,
-          labels: nodeA.labels,
-          properties: nodeA.properties,
-        },
-        {
-          elementId: nodeB.elementId,
-          labels: nodeB.labels,
-          properties: nodeB.properties,
-        },
-      ],
+      success: true,
+      data: edgeData,
     });
   } catch (error) {
     console.error(error);
-    return res.status(500).send("Error fetching relationship");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   } finally {
     await session.close();
   }
@@ -72,8 +75,12 @@ const edgeProposalCommunityGet = async (req, res) => {
         communityId: true,
         relationType: true,
         properties: true,
+        sourceId: true,
+        targetId: true,
+        proposalType: true,
         status: true,
         createdAt: true,
+        kgEdgeId: true,
         upvotes: true,
         downvotes: true,
       },
@@ -99,12 +106,20 @@ const edgeCreate = async (req, res) => {
   const { sourceId, targetId, type, properties } = req.body;
 
   if (!sourceId || !targetId || !type) {
-    return res.status(400).send("sourceId, targetId, and type are required");
+    return res.status(400).json({
+      success: false,
+      error: "sourceId, targetId, and type are required",
+    });
   }
 
   // sanitize relationship type
   const relType = type.replace(/[^A-Za-z0-9_]/g, "");
-  if (!relType) return res.status(400).send("Invalid relationship type");
+  if (!relType) {
+    return res.status(400).json({
+      success: false,
+      error: "Invalid relationship type",
+    });
+  }
 
   try {
     // create relationship
@@ -112,30 +127,51 @@ const edgeCreate = async (req, res) => {
       MATCH (a), (b)
       WHERE elementId(a) = $sourceId AND elementId(b) = $targetId
       CREATE (a)-[r:${relType} $props]->(b)
-      RETURN r
+      RETURN r, a, b
     `;
 
     const result = await session.executeWrite((tx) => tx.run(createQuery, { sourceId, targetId, props: properties || {} }));
 
-    if (result.records.length === 0) return res.status(404).send("Nodes not found");
+    if (result.records.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Nodes not found",
+      });
+    }
 
     const record = result.records[0];
     const rel = record.get("r");
+    const nodeA = record.get("a");
+    const nodeB = record.get("b");
+
+    const edgeData = {
+      id: rel.elementId,
+      sourceId: nodeA.elementId,
+      targetId: nodeB.elementId,
+      type: rel.type,
+      properties: rel.properties,
+    };
 
     // recompute embeddings for both nodes
     await Promise.all([recomputeNodeEmbedding(sourceId), recomputeNodeEmbedding(targetId)]);
 
-    return res.status(201).send(rel);
+    return res.status(200).json({
+      success: true,
+      data: edgeData,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).send("Error creating relationship");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   } finally {
     await session.close();
   }
 };
 
 const edgeProposalCreate = async (req, res) => {
-  const { userId, type, communityId, properties, sourceId, targetId } = req.body;
+  const { userId, type, communityId, properties, sourceId, targetId, proposalType, kgEdgeId } = req.body;
 
   try {
     const edgeProposalRecord = await prisma.edgeProposal.create({
@@ -146,6 +182,8 @@ const edgeProposalCreate = async (req, res) => {
         properties: properties,
         sourceId: sourceId,
         targetId: targetId,
+        proposalType: proposalType,
+        kgEdgeId: kgEdgeId || null,
       },
       select: {
         id: true,
@@ -160,8 +198,10 @@ const edgeProposalCreate = async (req, res) => {
         properties: true,
         sourceId: true,
         targetId: true,
+        proposalType: true,
         status: true,
         createdAt: true,
+        kgEdgeId: true,
         upvotes: true,
         downvotes: true,
       },
@@ -287,14 +327,21 @@ const edgeProposalVote = async (req, res) => {
 
     // if accepted
     if (status === "ACCEPT") {
-      // add the node in the Knowledge Graph
-      const edgeId = await addEdge(
-        updatedProposal.relationType,
-        updatedProposal.communityId,
-        updatedProposal.sourceId,
-        updatedProposal.targetId,
-        updatedProposal.properties
-      );
+      let edgeId;
+      // based on ProposalType, add, update or delete node
+      if (edgeProposal.proposalType === ProposalType.CREATE) {
+        edgeId = await addEdge(
+          updatedProposal.relationType,
+          updatedProposal.communityId,
+          updatedProposal.sourceId,
+          updatedProposal.targetId,
+          updatedProposal.properties
+        );
+      } else if (edgeProposal.proposalType === ProposalType.UPDATE) {
+        edgeId = await updateEdge(updatedProposal.kgEdgeId, updatedProposal.properties);
+      } else {
+        edgeId = await deleteEdge(updatedProposal.kgEdgeId);
+      }
 
       await prisma.edgeProposal.update({
         where: {
@@ -359,8 +406,12 @@ const edgeProposalVote = async (req, res) => {
         communityId: true,
         relationType: true,
         properties: true,
+        sourceId: true,
+        targetId: true,
+        proposalType: true,
         status: true,
         createdAt: true,
+        kgEdgeId: true,
         upvotes: true,
         downvotes: true,
       },
@@ -390,24 +441,44 @@ const edgeUpdate = async (req, res) => {
   try {
     // update properties of the relationship
     const updateQuery = `
-      MATCH ()-[r]->()
+      MATCH (a)-[r]->(b)
       WHERE elementId(r) = $relId
       SET r += $props
-      RETURN r
+      RETURN r, a, b
     `;
 
     const updatedRelResult = await session.executeWrite((tx) => tx.run(updateQuery, { relId: id, props: properties || {} }));
 
     if (updatedRelResult.records.length === 0) {
-      return res.status(404).send("Relationship not found");
+      return res.status(404).json({
+        success: false,
+        error: "Edge not found",
+      });
     }
 
-    const updatedRel = updatedRelResult.records[0].get("r");
+    const record = updatedRelResult.records[0];
+    const rel = record.get("r");
+    const nodeA = record.get("a");
+    const nodeB = record.get("b");
 
-    return res.status(200).send(updatedRel);
+    const edgeData = {
+      id: rel.elementId,
+      sourceId: nodeA.elementId,
+      targetId: nodeB.elementId,
+      type: rel.type,
+      properties: rel.properties,
+    };
+
+    return res.status(200).json({
+      success: true,
+      data: edgeData,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).send("Error updating relationship");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   } finally {
     await session.close();
   }
@@ -420,14 +491,19 @@ const edgeDelete = async (req, res) => {
   try {
     // delete the relationship
     const deleteQuery = `
-      MATCH ()-[r]->()
+      MATCH (a)-[r]->(b)
       WHERE elementId(r) = $relId
       DELETE r
-      RETURN startNode(r) AS a, endNode(r) AS b
+      RETURN a, b
     `;
     const deleteResult = await session.run(deleteQuery, { relId: id });
 
-    if (deleteResult.records.length === 0) return res.status(404).send("No such relationship found");
+    if (deleteResult.records.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Edge not found",
+      });
+    }
 
     const sourceId = deleteResult.records[0].get("a").elementId;
     const targetId = deleteResult.records[0].get("b").elementId;
@@ -435,10 +511,15 @@ const edgeDelete = async (req, res) => {
     // recompute embeddings for both nodes
     await Promise.all([recomputeNodeEmbedding(sourceId), recomputeNodeEmbedding(targetId)]);
 
-    res.status(200).send(`Relationship with id ${id} deleted successfully`);
+    res.status(200).json({
+      success: true,
+    });
   } catch (error) {
     console.error(error);
-    return res.status(500).send("Error deleting relationship");
+    res.status(500).json({
+      success: false,
+      error,
+    });
   } finally {
     await session.close();
   }
@@ -449,7 +530,7 @@ async function addEdge(type, communityId, sourceId, targetId, properties) {
 
   // sanitize relationship type
   const relType = type.replace(/[^A-Za-z0-9_]/g, "");
-  if (!relType) return res.status(400).send("Invalid relationship type");
+  if (!relType) return "Invalid relationship type";
 
   properties.communityId = communityId;
   try {
@@ -463,7 +544,7 @@ async function addEdge(type, communityId, sourceId, targetId, properties) {
 
     const result = await session.executeWrite((tx) => tx.run(createQuery, { sourceId, targetId, props: properties || {} }));
 
-    if (result.records.length === 0) return res.status(404).send("Nodes not found");
+    if (result.records.length === 0) return;
 
     const record = result.records[0];
     const rel = record.get("r");
@@ -472,6 +553,57 @@ async function addEdge(type, communityId, sourceId, targetId, properties) {
     await Promise.all([recomputeNodeEmbedding(sourceId), recomputeNodeEmbedding(targetId)]);
 
     return rel.identity.toString();
+  } catch (error) {
+    console.error(error);
+  } finally {
+    await session.close();
+  }
+}
+async function updateEdge(id, properties) {
+  const session = driver.session();
+
+  try {
+    // update properties of the relationship
+    const updateQuery = `
+      MATCH ()-[r]->()
+      WHERE elementId(r) = $relId
+      SET r += $props
+      RETURN r
+    `;
+
+    const updatedRelResult = await session.executeWrite((tx) => tx.run(updateQuery, { relId: id, props: properties || {} }));
+    if (updatedRelResult.records.length === 0) return;
+
+    return id;
+  } catch (error) {
+    console.error(error);
+  } finally {
+    await session.close();
+  }
+}
+
+async function deleteEdge(id) {
+  const session = driver.session();
+
+  try {
+    // delete the relationship
+    const deleteQuery = `
+      MATCH ()-[r]->()
+      WHERE elementId(r) = $relId
+      DELETE r
+      RETURN startNode(r) AS a, endNode(r) AS b
+    `;
+    const deleteResult = await session.run(deleteQuery, { relId: id });
+
+    if (deleteResult.records.length === 0) return;
+
+    const sourceId = deleteResult.records[0].get("a").elementId;
+    const targetId = deleteResult.records[0].get("b").elementId;
+
+    // recompute embeddings for both nodes
+    await Promise.all([recomputeNodeEmbedding(sourceId), recomputeNodeEmbedding(targetId)]);
+
+    return id;
   } catch (error) {
     console.error(error);
   } finally {

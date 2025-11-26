@@ -23,7 +23,6 @@ model User {
   // relations
   communities         UserCommunity[]
   ownedCommunities    Community[]   @relation("UserOwnedCommunities")
-  reputationLogs      ReputationLog[]
   posts               Post[]
   comments            Comment[]
   nodeProposals       NodeProposal[]
@@ -43,7 +42,6 @@ model Community {
   owner                 User                     @relation("UserOwnedCommunities", fields: [ownerId], references: [id])
   members               UserCommunity[]
   posts                 Post[]
-  reputationLogs        ReputationLog[]
   nodeProposals         NodeProposal[]
   edgeProposals         EdgeProposal[]
 }
@@ -63,21 +61,6 @@ model UserCommunity {
 
   // composite PK
   @@id([userId, communityId])
-}
-
-model ReputationLog {
-  id           String        @id @default(uuid())
-
-  userId      String
-  communityId String
-
-  actionType  Action
-
-  timestamp   DateTime                 @default(now())
-
-  // relations
-  user        User       @relation(fields: [userId], references: [id])
-  community   Community  @relation(fields: [communityId], references: [id])
 }
 
 model Post {
@@ -113,17 +96,18 @@ model Comment {
 }
 
 model NodeProposal {
-  id          String           @id @default(uuid())
-  userId      String
-  communityId String
-  name        String
-  labels      String[]
-  properties  Json?
-  status      ProposalStatus   @default(PENDING)
-  createdAt   DateTime         @default(now())
-  kgNodeId    String?
-  upvotes     Int              @default(0)
-  downvotes   Int              @default(0)
+  id            String           @id @default(uuid())
+  userId        String
+  communityId   String
+  name          String
+  labels        String[]
+  properties    Json?
+  proposalType  ProposalType     @default(CREATE)
+  status        ProposalStatus   @default(PENDING)
+  createdAt     DateTime         @default(now())
+  kgNodeId      String?
+  upvotes       Int              @default(0)
+  downvotes     Int              @default(0)
 
   // relations
   user        User             @relation(fields: [userId], references: [id])
@@ -138,6 +122,7 @@ model EdgeProposal {
   targetId      String
   relationType  String
   properties    Json?
+  proposalType  ProposalType     @default(CREATE)
   status        ProposalStatus   @default(PENDING)
   createdAt     DateTime         @default(now())
   kgEdgeId      String?
@@ -178,6 +163,12 @@ enum ProposalStatus {
   PENDING
   APPROVED
   REJECTED
+}
+
+enum ProposalType {
+  CREATE
+  UPDATE
+  DELETE
 }
 
 enum TargetType {

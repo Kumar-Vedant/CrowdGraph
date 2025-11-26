@@ -5,6 +5,7 @@ const nodeRouter = Router();
 
 nodeRouter.get("/", nodeController.nodeGetAll);
 nodeRouter.get("/:id", nodeController.nodeGet);
+nodeRouter.get("/:communityId/graph", nodeController.nodeCommunityGraphGet);
 nodeRouter.get("/:communityId/search", nodeController.nodeSearch);
 nodeRouter.get("/:communityId/proposal", nodeController.nodeProposalCommunityGet);
 nodeRouter.post("/create", nodeController.nodeCreate);

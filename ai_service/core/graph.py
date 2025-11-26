@@ -46,4 +46,5 @@ graph_vector = Neo4jVector.from_existing_index(
     index_name="nodeIndex",
     embedding_node_property="embedding",
     text_node_property="name",
+    retrieval_query="MATCH (node) WHERE node.communityId = $communityId RETURN node.name AS text, apoc.map.merge(apoc.map.removeKeys(properties(node), ['embedding']), {id: elementId(node)}) AS metadata, score"
 )

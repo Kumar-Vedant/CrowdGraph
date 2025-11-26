@@ -6,7 +6,7 @@ load_dotenv()
 # initialize the model
 model = ChatGoogleGenerativeAI(
     model="gemini-2.5-flash",
-    temperature=0.2,
+    temperature=0.1,
 )
 
 # define prompt structure
@@ -23,12 +23,14 @@ Your task:
 - Explain important terms, entities, and relationships in context.
 - Expand on connections between entities, their properties, and relationships to make the answer insightful and complete.
 - Never invent or assume facts not present in the context.
+- Never mention the source, just answer the question assuming the source knowledge is your knowledge
 - If the question cannot be answered from the given data, just say that you don't know — don't try to make up an answer.
 
 Formatting:
 - Write the answer as a well-structured explanation or analysis.
 - Use bullet points, lists, or short paragraphs if it improves clarity.
 - When referring to entities, use their names or labels as shown in the context.
+- Never refer to the internal id of any entity in the answer
 
 Context:
 {context}

@@ -9,4 +9,5 @@ cypher_qa = GraphCypherQAChain.from_llm(
     graph=graph,
     allow_dangerous_requests=True,
     verbose=False,
+    return_intermediate_steps=True,
 )
