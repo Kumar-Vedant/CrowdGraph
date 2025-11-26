@@ -1,0 +1,16 @@
+# Web Services and ASGI Server
+fastapi
+uvicorn
+gunicorn
+
+# Core LangChain and LangGraph Libraries
+langchain-core
+langgraph
+langchain-neo4j
+
+# LLM Integration
+langchain-google-genai
+huggingface-hub
+
+# Environment Management
+python-dotenv
