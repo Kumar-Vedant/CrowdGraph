@@ -8,7 +8,7 @@ const queryRouter = Router();
 queryRouter.post("/", async (req, res) => {
   try {
     // send the incoming data to the Python AI service
-    const response = await axios.post("http://localhost:8000/query", req.body);
+    const response = await axios.post("https://query-engine-4avr.onrender.com/query", req.body);
 
     const data = response.data;
 
