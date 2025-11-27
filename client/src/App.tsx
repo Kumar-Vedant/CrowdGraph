@@ -3,7 +3,6 @@ import { Route, Routes } from 'react-router-dom'
 import Landing from './_root/pages/Landing'
 import Communities from './_root/pages/Communities'
 import Profile from './_root/pages/Profile'
-import UserProfile from './_root/pages/UserProfile'
 import AuthLayout from './_auth/AuthLayout'
 import Signup from './_auth/pages/Signup'
 import Login from './_auth/pages/Login'
@@ -21,7 +20,7 @@ function App() {
             <Route index element={<Landing />} />
             <Route path="/communities" element={<Communities />} />
             <Route path="/profile" element={<Profile />} />
-            <Route path="/user/:userId" element={<UserProfile />} />
+            <Route path="/user/:userId" element={<Profile />} />
             <Route path="/community/:communityId" element={<CommunityDashboard />} />
             <Route path="*" element={<NotFound />} />
           </Route>

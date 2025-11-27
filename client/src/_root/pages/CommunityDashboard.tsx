@@ -17,6 +17,7 @@ import {
   createEdgeProposal,
   updateCommunity,
   deleteCommunity,
+  queryKnowledgeGraph,
 } from "@/services/api";
 import { useApi } from "@/hooks/apiHook";
 import { useEffect, useState } from "react";
@@ -40,15 +41,45 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import KnowledgeGraph from "@/components/shared/KnowledgeGraph";
+import NodeSearchDropdown from "@/components/shared/NodeSearchDropdown";
 
 // Community Feed Component
 function CommunityFeedSection({
   communityId,
   isMember,
+  searchActive,
+  searchAnswer,
+  onClearSearch,
 }: {
   communityId: string;
   isMember: boolean;
+  searchActive: boolean;
+  searchAnswer?: string;
+  onClearSearch?: () => void;
 }) {
+  if (searchActive && searchAnswer) {
+    return (
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em]">
+            Search Answer
+          </h2>
+          <button
+            onClick={onClearSearch}
+            className="px-3 py-1 text-xs sm:text-sm bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-colors"
+          >
+            Clear Search
+          </button>
+        </div>
+        <div className="px-4 py-3 bg-card rounded-lg border border-border">
+          <p className="text-foreground text-sm sm:text-base leading-relaxed">
+            {searchAnswer}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 min-w-0">
       <h2 className="text-foreground text-lg sm:text-xl md:text-[22px] font-bold leading-tight tracking-[-0.015em] px-4 pb-3 pt-5">
@@ -96,7 +127,6 @@ function CommunityDashboard() {
   const { callApi: callVoteEdgeApi } = useApi(voteEdgeProposal);
   const {
     data: graphData,
-    loading: graphLoading,
     callApi: callGraphApi,
   } = useApi(getGraphInCommunity);
 
@@ -114,6 +144,47 @@ function CommunityDashboard() {
   const [ownerSettingsDescription, setOwnerSettingsDescription] = useState<string>("");
   const [isUpdatingCommunity, setIsUpdatingCommunity] = useState(false);
   const [isDeletingCommunity, setIsDeletingCommunity] = useState(false);
+
+  // Search state
+  const [searchActive, setSearchActive] = useState(false);
+  const [searchAnswer, setSearchAnswer] = useState<string>("");
+  const [searchGraphData, setSearchGraphData] = useState<{ nodes: Node[]; edges: Edge[] }>({ nodes: [], edges: [] });
+  const { callApi: callQueryApi } = useApi<any>(queryKnowledgeGraph);
+
+  // Handle search query
+  const handleSearch = async (query: string) => {
+    if (!query.trim() || !communityId) {
+      setSearchActive(false);
+      return;
+    }
+
+    try {
+      const response = await callQueryApi(communityId, query);
+      
+      if (response?.data?.success && response.data.data) {
+        setSearchAnswer(response.data.data.answer || "");
+        setSearchGraphData({
+          nodes: response.data.data.nodes || [],
+          edges: response.data.data.edges || [],
+        });
+        setSearchActive(true);
+        toast.success("Search completed!");
+      } else {
+        toast.error(response?.data?.error || "Search failed");
+        setSearchActive(false);
+      }
+    } catch (error) {
+      toast.error("Error performing search");
+      setSearchActive(false);
+    }
+  };
+
+  // Clear search
+  const handleClearSearch = () => {
+    setSearchActive(false);
+    setSearchAnswer("");
+    setSearchGraphData({ nodes: [], edges: [] });
+  };
 
   // Check if user is a member
   useEffect(() => {
@@ -702,9 +773,7 @@ function CommunityDashboard() {
             {isMemberOfCommunity ? (
                 <SearchBar
                   placeholder="Search Query"
-                  onSearch={(query) => {
-                    console.log("Searching for:", query);
-                  }}
+                  onSearch={handleSearch}
                 />
               ) : (
                 <div className="p-3 sm:p-4 bg-muted border-2 border-dashed border-border rounded-lg text-center">
@@ -723,7 +792,7 @@ function CommunityDashboard() {
                   <KnowledgeGraph 
                     onExpand={() => setIsGraphModalOpen(true)} 
                     isExpanded={false} 
-                    graphData={graphData || { nodes: [], edges: [] }} 
+                    graphData={searchActive ? searchGraphData : (graphData || { nodes: [], edges: [] })} 
                     onUpdate={handleGraphUpdate}
                     onDelete={handleGraphDelete}
                     onOpenEditModal={handleOpenEditModal}
@@ -750,6 +819,9 @@ function CommunityDashboard() {
                 <CommunityFeedSection
                   communityId={communityId!}
                   isMember={isMemberOfCommunity}
+                  searchActive={searchActive}
+                  searchAnswer={searchAnswer}
+                  onClearSearch={handleClearSearch}
                 />
               </TabsContent>
               <TabsContent value="queue" className="mt-4">
@@ -768,6 +840,9 @@ function CommunityDashboard() {
             <CommunityFeedSection
               communityId={communityId!}
               isMember={isMemberOfCommunity}
+              searchActive={searchActive}
+              searchAnswer={searchAnswer}
+              onClearSearch={handleClearSearch}
             />
             <ContributionQueueSection
               proposalsData={proposalsData}
@@ -900,20 +975,40 @@ function CommunityDashboard() {
 
                 {/* ------------------ EDGE TAB ------------------ */}
                 <TabsContent value="edge" className="space-y-3">
-                  <Input
-                    placeholder="Source Node ID"
-                    value={edgeData.sourceId || ""}
-                    onChange={(e) =>
-                      setEdgeData({ ...edgeData, sourceId: e.target.value })
-                    }
-                  />
-                  <Input
-                    placeholder="Target Node ID"
-                    value={edgeData.targetId || ""}
-                    onChange={(e) =>
-                      setEdgeData({ ...edgeData, targetId: e.target.value })
-                    }
-                  />
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-2">
+                      Source Node
+                    </label>
+                    <NodeSearchDropdown
+                      nodes={(graphData?.nodes || []).map((node: any) => ({
+                        id: node.id,
+                        label: node.name || "Unnamed",
+                        group: node.labels?.[0],
+                      }))}
+                      value={edgeData.sourceId || ""}
+                      onChange={(nodeId) =>
+                        setEdgeData({ ...edgeData, sourceId: nodeId })
+                      }
+                      placeholder="Search and select source node..."
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-foreground block mb-2">
+                      Target Node
+                    </label>
+                    <NodeSearchDropdown
+                      nodes={(graphData?.nodes || []).map((node: any) => ({
+                        id: node.id,
+                        label: node.name || "Unnamed",
+                        group: node.labels?.[0],
+                      }))}
+                      value={edgeData.targetId || ""}
+                      onChange={(nodeId) =>
+                        setEdgeData({ ...edgeData, targetId: nodeId })
+                      }
+                      placeholder="Search and select target node..."
+                    />
+                  </div>
                   <Input
                     placeholder="Edge Type"
                     value={edgeData.type || ""}

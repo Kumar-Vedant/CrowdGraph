@@ -11,7 +11,7 @@ interface Community {
   description: string;
   ownerId: string;
   createdAt: Date;
-  role?: "Admin" | "Member" | "Owner";
+  role?: "Member" | "Owner";
 }
 
 interface Comment {
@@ -89,10 +89,16 @@ interface GraphProposals {
   edgeProposals: EdgeProposal[];
 }
 
+interface QueryResponse {
+  answer: string;
+  nodes: Node[];
+  edges: Edge[];
+}
+
 interface RouteResponse<T> {
   success: boolean;
   data?: T;
   error?: string | null;
 }
 
-export type { User, Community, Post, Comment, Node, Edge, NodeProposal, EdgeProposal, RouteResponse, GraphProposals };
+export type { User, Community, Post, Comment, Node, Edge, NodeProposal, EdgeProposal, RouteResponse, GraphProposals, QueryResponse };
