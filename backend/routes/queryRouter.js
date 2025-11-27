@@ -8,7 +8,7 @@ const queryRouter = Router();
 queryRouter.post("/", async (req, res) => {
   try {
     // send the incoming data to the Python AI service
-    const response = await axios.post("https://query-engine-4avr.onrender.com/query", req.body);
+    const response = await axios.post("https://query-engine-4avr.onrender.com/query", req.body, { timeout: 120000 });
 
     const data = response.data;
 
@@ -64,8 +64,8 @@ queryRouter.post("/", async (req, res) => {
 
     res.status(200).json({
       success: true,
-      answer: data["answer"],
       data: {
+        answer: data["answer"],
         nodes: nodeData,
         edges: edgeData,
       },
