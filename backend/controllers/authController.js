@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 
 import pkg from "@prisma/client";
+import { error } from "neo4j-driver";
 const { PrismaClient, Role } = pkg;
 
 const prisma = new PrismaClient();
@@ -22,20 +23,30 @@ const login = async (req, res) => {
       where: {
         username: username,
       },
-      select: {
-        passwordHash: true,
-      },
     });
 
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        error: "User not found",
+      });
+    }
     const match = await bcrypt.compare(password, user.passwordHash);
 
-    let success = false;
     if (match) {
-      success = true;
+      const { passwordHash, updatedAt, ...rest } = user;
+
+      const userData = { ...rest };
+      res.status(200).json({
+        success: true,
+        data: userData,
+      });
+    } else {
+      res.status(401).json({
+        success: false,
+        error: "Incorrect username or password",
+      });
     }
-    res.status(200).json({
-      success: success,
-    });
   } catch (error) {
     console.error(error);
     res.status(500).json({

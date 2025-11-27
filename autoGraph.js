@@ -1,318 +1,128 @@
 const axios = require("axios");
 
 // --- Configuration ---
-const API_ENDPOINT = "https://crowdgraph.onrender.com/node/create"; // 🎯 Your Node Backend API URL
+const API_ENDPOINT = "https://crowdgraph.onrender.com/edge/create"; // 🎯 Your Node Backend API URL
 const REQUEST_TIMEOUT_MS = 60000; // ⏱️ Set timeout to 30 seconds
 
 const parametersToCall = [
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:28",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:40",
+    type: "Compatible_With",
     properties: {
-      name: "Titanfall 2",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2016,
-      genre: "FPS, Sci-Fi",
-      engine: "Source Engine",
-      developer: "Respawn Entertainment",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:29",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:40",
+    type: "Compatible_With",
     properties: {
-      name: "Crysis 3",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2013,
-      genre: "FPS",
-      engine: "CryEngine 3",
-      developer: "Crytek",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:30",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:41",
+    type: "Compatible_With",
     properties: {
-      name: "Ghostrunner",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2020,
-      genre: "Cyberpunk, Parkour, Action",
-      engine: "Unreal Engine 4",
-      developer: "One More Level",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:31",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:41",
+    type: "Uses_Socket",
     properties: {
-      name: "God of War (2018)",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2018,
-      genre: "Action, Adventure",
-      engine: "Santa Monica Engine",
-      developer: "Santa Monica Studio",
+      socket: "LGA1700",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:33",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:41",
+    type: "Uses_Socket",
     properties: {
-      name: "God of War III",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2010,
-      genre: "Action, Hack and Slash",
-      engine: "Kinetica Engine",
-      developer: "Santa Monica Studio",
+      socket: "LGA1700",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:32",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:40",
+    type: "Uses_Socket",
     properties: {
-      name: "Apex Legends",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2019,
-      genre: "Battle Royale, FPS",
-      engine: "Source Engine",
-      developer: "Respawn Entertainment",
+      socket: "AM5",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:37",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:40",
+    type: "Connects_Via",
     properties: {
-      name: "Doom Eternal",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2020,
-      genre: "FPS",
-      engine: "id Tech 7",
-      developer: "id Software",
+      interface: "PCIe 4.0",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:38",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:41",
+    type: "Supports_RAM_Type",
     properties: {
-      name: "The Witcher 3: Wild Hunt",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2015,
-      genre: "RPG",
-      engine: "REDengine 3",
-      developer: "CD Projekt Red",
+      memoryType: "DDR5",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:38",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:40",
+    type: "Supports_RAM_Type",
     properties: {
-      name: "Cyberpunk 2077",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2020,
-      genre: "RPG",
-      engine: "REDengine 4",
-      developer: "CD Projekt Red",
+      memoryType: "DDR5",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Game"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:42",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:30",
+    type: "Uses_GPU",
     properties: {
-      name: "Halo Infinite",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      releaseYear: 2021,
-      genre: "FPS",
-      engine: "Slipspace Engine",
-      developer: "343 Industries",
-    },
-  },
-
-  //----------------------------------------------------------------------
-  // Developers
-  //----------------------------------------------------------------------
-  {
-    labels: ["Developer"],
-    properties: {
-      name: "Respawn Entertainment",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      founded: 2010,
-      country: "USA",
-      notableGames: ["Titanfall", "Titanfall 2", "Apex Legends"],
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Developer"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:43",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:28",
+    type: "Alternative_To",
     properties: {
-      name: "Crytek",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      founded: 1999,
-      country: "Germany",
-      notableGames: ["Crysis Series", "Ryse: Son of Rome"],
+      reason: "High-end performance comparison",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Developer"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:34",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:43",
+    type: "Performance_Compared_With",
     properties: {
-      name: "CD Projekt Red",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      founded: 2002,
-      country: "Poland",
-      notableGames: ["The Witcher Series", "Cyberpunk 2077"],
+      metric: "CPU/GPU benchmarks",
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Developer"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:36",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:35",
+    type: "Competitor_Device",
     properties: {
-      name: "Santa Monica Studio",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      founded: 1999,
-      country: "USA",
-      notableGames: ["God of War Series"],
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
   {
-    labels: ["Developer"],
+    sourceId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:35",
+    targetId: "4:8eefa8fc-22bf-4992-b648-f9c4e4c8cc01:34",
+    type: "Competitor_Device",
     properties: {
-      name: "One More Level",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      country: "Poland",
-      notableGames: ["Ghostrunner"],
-    },
-  },
-
-  //----------------------------------------------------------------------
-  // Game Engines
-  //----------------------------------------------------------------------
-  {
-    labels: ["Engine"],
-    properties: {
-      name: "Source Engine",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      createdBy: "Valve",
-      initialRelease: 2004,
-    },
-  },
-  {
-    labels: ["Engine"],
-    properties: {
-      name: "CryEngine 3",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      createdBy: "Crytek",
-      initialRelease: 2009,
-    },
-  },
-  {
-    labels: ["Engine"],
-    properties: {
-      name: "Unreal Engine 4",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      createdBy: "Epic Games",
-      initialRelease: 2014,
-    },
-  },
-  {
-    labels: ["Engine"],
-    properties: {
-      name: "REDengine 3",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      createdBy: "CD Projekt Red",
-      initialRelease: 2013,
-    },
-  },
-  {
-    labels: ["Engine"],
-    properties: {
-      name: "REDengine 4",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      createdBy: "CD Projekt Red",
-      initialRelease: 2020,
-    },
-  },
-  {
-    labels: ["Engine"],
-    properties: {
-      name: "id Tech 7",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      createdBy: "id Software",
-      initialRelease: 2020,
-    },
-  },
-  {
-    labels: ["Engine"],
-    properties: {
-      name: "Slipspace Engine",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      createdBy: "343 Industries",
-      initialRelease: 2019,
-    },
-  },
-
-  //----------------------------------------------------------------------
-  // Characters
-  //----------------------------------------------------------------------
-  {
-    labels: ["Character"],
-    properties: {
-      name: "Jack Cooper",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      appearsIn: "Titanfall 2",
-      role: "Pilot",
-    },
-  },
-  {
-    labels: ["Character"],
-    properties: {
-      name: "BT-7274",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      appearsIn: "Titanfall 2",
-      role: "Vanguard-Class Titan",
-    },
-  },
-  {
-    labels: ["Character"],
-    properties: {
-      name: "Kratos",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      appearsIn: ["God of War III", "God of War (2018)"],
-      role: "Protagonist",
-    },
-  },
-  {
-    labels: ["Character"],
-    properties: {
-      name: "Atreus",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      appearsIn: "God of War (2018)",
-      role: "Deuteragonist",
-    },
-  },
-  {
-    labels: ["Character"],
-    properties: {
-      name: "Geralt of Rivia",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      appearsIn: "The Witcher 3",
-      role: "Protagonist",
-    },
-  },
-
-  //----------------------------------------------------------------------
-  // Platforms
-  //----------------------------------------------------------------------
-  {
-    labels: ["Platform"],
-    properties: {
-      name: "PlayStation 4",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      manufacturer: "Sony",
-      releaseYear: 2013,
-    },
-  },
-  {
-    labels: ["Platform"],
-    properties: {
-      name: "Xbox One",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      manufacturer: "Microsoft",
-      releaseYear: 2013,
-    },
-  },
-  {
-    labels: ["Platform"],
-    properties: {
-      name: "PC",
-      communityId: "18bda686-6138-48a6-8036-07f6e75fcb17",
-      manufacturer: "Various",
-      releaseYear: null,
+      communityId: "35265f7c-0b11-4b7b-b06c-5ba1af9a3b23",
     },
   },
 ];
