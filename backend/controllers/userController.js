@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import pkg from "@prisma/client";
+import { error } from "neo4j-driver";
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
@@ -64,6 +65,42 @@ const userListGet = async (req, res) => {
   }
 };
 
+const userCommunityCreditsGet = async (req, res) => {
+  const { id, communityId } = req.params;
+
+  try {
+    const userComm = await prisma.userCommunity.findUnique({
+      where: {
+        userId_communityId: {
+          userId: id,
+          communityId: communityId,
+        },
+      },
+      select: {
+        credits: true,
+      },
+    });
+
+    if (!userComm) {
+      return res.status(404).json({
+        success: false,
+        error: "Record not found",
+      });
+    }
+    res.status(200).json({
+      success: true,
+      data: {
+        credits: userComm.credits,
+      },
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({
+      success: false,
+      error,
+    });
+  }
+};
 const userSearch = async (req, res) => {
   const { username } = req.query;
   try {
@@ -272,6 +309,7 @@ export default {
   userCommunitiesGet,
   userListGet,
   userSearch,
+  userCommunityCreditsGet,
   userCreate,
   userUpdate,
   userDelete,
