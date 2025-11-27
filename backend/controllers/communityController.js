@@ -124,6 +124,7 @@ const communityUsersGet = async (req, res) => {
             id: true,
             username: true,
             createdAt: true,
+            reputation: true,
           },
         },
       },

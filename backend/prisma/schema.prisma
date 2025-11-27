@@ -17,6 +17,7 @@ model User {
   id             String                   @id @default(uuid())
   username       String                   @unique
   passwordHash   String
+  reputation     Int        @default(0)
   createdAt      DateTime                 @default(now())
   updatedAt      DateTime                 @updatedAt
 
@@ -39,7 +40,7 @@ model Community {
   totalVotingPotential  Int            @default(0)
 
   // relations
-  owner                 User                     @relation("UserOwnedCommunities", fields: [ownerId], references: [id])
+  owner                 User                     @relation("UserOwnedCommunities", fields: [ownerId], references: [id], onDelete: Cascade)
   members               UserCommunity[]
   posts                 Post[]
   nodeProposals         NodeProposal[]
@@ -51,13 +52,13 @@ model UserCommunity {
   userId      String
   communityId String
   role        Role
-  reputation  Int        @default(0)
-  credits     Int        @default(0)
+  reputation  Int        @default(30)
+  credits     Int        @default(30)
   joinedAt    DateTime   @default(now())
 
   // relations
-  user        User       @relation(fields: [userId], references: [id])
-  community   Community  @relation(fields: [communityId], references: [id])
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community   Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
 
   // composite PK
   @@id([userId, communityId])
@@ -74,8 +75,8 @@ model Post {
   voteCount   Int        @default(0)
 
   // relations
-  author      User       @relation(fields: [authorId], references: [id])
-  community   Community  @relation(fields: [communityId], references: [id])
+  author      User       @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  community   Community  @relation(fields: [communityId], references: [id], onDelete: Cascade)
   comments    Comment[]
 }
 
@@ -89,9 +90,9 @@ model Comment {
   voteCount   Int        @default(0)
 
   // relations
-  post           Post       @relation(fields: [postId], references: [id])
-  user           User       @relation(fields: [userId], references: [id])
-  parentComment  Comment?   @relation("CommentHierarchy", fields: [parentCommentId], references: [id])
+  post           Post       @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parentComment  Comment?   @relation("CommentHierarchy", fields: [parentCommentId], references: [id], onDelete: Cascade)
   replies        Comment[]  @relation("CommentHierarchy")
 }
 
@@ -110,8 +111,8 @@ model NodeProposal {
   downvotes     Int              @default(0)
 
   // relations
-  user        User             @relation(fields: [userId], references: [id])
-  community   Community        @relation(fields: [communityId], references: [id])
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community   Community        @relation(fields: [communityId], references: [id], onDelete: Cascade)
 }
 
 model EdgeProposal {
@@ -130,8 +131,8 @@ model EdgeProposal {
   downvotes     Int              @default(0)
 
   // relations
-  user          User             @relation(fields: [userId], references: [id])
-  community     Community        @relation(fields: [communityId], references: [id])
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  community     Community        @relation(fields: [communityId], references: [id], onDelete: Cascade)
 }
 
 model Vote {
@@ -142,7 +143,7 @@ model Vote {
   voteValue    Int
   timestamp    DateTime      @default(now())
 
-  user         User          @relation(fields: [userId], references: [id])
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([targetId, userId])
 }

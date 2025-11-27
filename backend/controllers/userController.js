@@ -16,6 +16,7 @@ const userGet = async (req, res) => {
         id: true,
         username: true,
         createdAt: true,
+        reputation: true,
       },
     });
 
@@ -46,6 +47,7 @@ const userListGet = async (req, res) => {
         id: true,
         username: true,
         createdAt: true,
+        reputation: true,
       },
     });
     res.status(200).json({
@@ -75,6 +77,7 @@ const userSearch = async (req, res) => {
           id: true,
           username: true,
           createdAt: true,
+          reputation: true,
         },
       },
     });
@@ -156,6 +159,7 @@ const userCreate = async (req, res) => {
         id: true,
         username: true,
         createdAt: true,
+        reputation: true,
       },
     });
     res.status(200).json({
@@ -212,6 +216,7 @@ const userUpdate = async (req, res) => {
         id: true,
         username: true,
         createdAt: true,
+        reputation: true,
       },
     });
     res.status(200).json({

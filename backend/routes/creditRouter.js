@@ -1,3 +1,4 @@
+import pLimit from "p-limit";
 import express from "express";
 import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
@@ -6,6 +7,7 @@ const creditRouter = express.Router();
 const prisma = new PrismaClient();
 
 creditRouter.post("/", async (req, res) => {
+  const limit = pLimit(10);
   try {
     // verify authorization header from Github Actions
     // const auth = req.headers.authorization;
@@ -41,17 +43,19 @@ creditRouter.post("/", async (req, res) => {
     // update credits for all users in each community
     await Promise.all(
       updates.map((u) =>
-        prisma.userCommunity.update({
-          where: {
-            userId_communityId: {
-              userId: u.userId,
-              communityId: u.communityId,
+        limit(() =>
+          prisma.userCommunity.update({
+            where: {
+              userId_communityId: {
+                userId: u.userId,
+                communityId: u.communityId,
+              },
             },
-          },
-          data: {
-            credits: u.credits,
-          },
-        })
+            data: {
+              credits: u.credits,
+            },
+          })
+        )
       )
     );
 
@@ -75,6 +79,31 @@ creditRouter.post("/", async (req, res) => {
         },
       });
     }
+
+    // calculate total reputation for each user
+    const userReputationTotals = {};
+    for (const uc of userCommunities) {
+      if (!userReputationTotals[uc.userId]) {
+        userReputationTotals[uc.userId] = 0;
+      }
+      userReputationTotals[uc.userId] += uc.reputation;
+    }
+
+    // update total reputation for all users
+    await Promise.all(
+      Object.keys(userReputationTotals).map((userId) =>
+        limit(() =>
+          prisma.user.update({
+            where: {
+              id: userId,
+            },
+            data: {
+              reputation: userReputationTotals[userId],
+            },
+          })
+        )
+      )
+    );
 
     return res.status(200).json({
       success: true,
